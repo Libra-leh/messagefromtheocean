@@ -1,0 +1,2271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A Message From the Sea 🐚</title>
+<link href="https://fonts.googleapis.com/css2?family=Bubblegum+Sans&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sand: #FFF3E0; --coral: #FF8A65; --coral-light: #FFCCBC;
+  --teal: #26C6DA; --teal-deep: #0097A7; --seafoam: #B2EBF2;
+  --shell-pink: #F48FB1; --shell-peach: #FFAB91; --shell-lavender: #CE93D8;
+  --shell-cream: #FFF8E1; --ocean-dark: #006064; --ocean-mid: #00ACC1;
+  --bubble: rgba(255,255,255,0.5); --text-dark: #37474F;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family:'Nunito',sans-serif;
+  background:#000;
+  overflow-x:hidden;
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ctext y='20' font-size='20'%3E🐚%3C/text%3E%3C/svg%3E") 0 20, auto;
+}
+
+/* === SCROLLABLE OCEAN COLUMN === */
+.ocean-scroll {
+  position:relative;
+  width:100%;
+  min-height:700vh; /* very tall — the ocean goes deep */
+}
+
+/* Gradient background that changes with depth */
+.depth-bg {
+  position:fixed;
+  inset:0;
+  z-index:0;
+  transition: background 1.8s ease;
+  pointer-events:none;
+}
+
+/* === FIXED HUD depth meter === */
+.depth-meter {
+  position:fixed;
+  right:18px;
+  top:50%;
+  transform:translateY(-50%);
+  z-index:200;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:6px;
+}
+.depth-label {
+  font-family:'Bubblegum Sans',cursive;
+  font-size:0.65rem;
+  color:rgba(255,255,255,0.7);
+  letter-spacing:1px;
+  writing-mode:vertical-rl;
+  text-orientation:mixed;
+}
+.depth-track {
+  width:4px;
+  height:120px;
+  background:rgba(255,255,255,0.15);
+  border-radius:2px;
+  position:relative;
+}
+.depth-thumb {
+  width:10px;
+  height:10px;
+  background:rgba(255,255,255,0.8);
+  border-radius:50%;
+  position:absolute;
+  left:-3px;
+  top:0;
+  transition:top 0.3s ease;
+  box-shadow:0 0 6px rgba(100,200,255,0.8);
+}
+.depth-value {
+  font-family:'Bubblegum Sans',cursive;
+  font-size:0.6rem;
+  color:rgba(255,255,255,0.6);
+  text-align:center;
+}
+.zone-name {
+  font-family:'Bubblegum Sans',cursive;
+  font-size:0.55rem;
+  color:rgba(150,220,255,0.8);
+  text-align:center;
+  max-width:40px;
+  line-height:1.2;
+  text-align:center;
+}
+
+/* === ZONE BANNERS === */
+.zone-banner {
+  position:absolute;
+  left:0; right:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  pointer-events:none;
+  z-index:5;
+  opacity:0;
+  transition:opacity 0.8s;
+}
+.zone-banner.visible { opacity:1; }
+.zone-tag {
+  font-family:'Bubblegum Sans',cursive;
+  font-size:0.8rem;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  color:rgba(150,220,255,0.5);
+  border:1px solid rgba(150,220,255,0.2);
+  padding:4px 16px;
+  border-radius:20px;
+  backdrop-filter:blur(4px);
+}
+
+/* Sun rays — only at surface */
+.sun-rays {
+  position:absolute;
+  top:0; left:50%; transform:translateX(-50%);
+  width:800px; height:500px;
+  pointer-events:none; z-index:1;
+}
+.ray {
+  position:absolute; top:0; left:50%;
+  width:3px; height:400px;
+  background:linear-gradient(180deg,rgba(255,255,200,0.35) 0%,transparent 100%);
+  transform-origin:top center;
+  animation:sway 6s ease-in-out infinite;
+}
+.ray:nth-child(1){transform:rotate(-40deg);animation-delay:0s;}
+.ray:nth-child(2){transform:rotate(-25deg);animation-delay:.5s;width:5px;opacity:.7;}
+.ray:nth-child(3){transform:rotate(-10deg);animation-delay:1s;}
+.ray:nth-child(4){transform:rotate(5deg);animation-delay:1.5s;width:4px;}
+.ray:nth-child(5){transform:rotate(20deg);animation-delay:.8s;}
+.ray:nth-child(6){transform:rotate(35deg);animation-delay:.3s;width:5px;opacity:.6;}
+@keyframes sway{0%,100%{opacity:.4;}50%{opacity:.8;}}
+
+/* Bubbles */
+.bubble-layer { position:absolute; inset:0; pointer-events:none; z-index:2; }
+.bubble {
+  position:absolute;
+  border-radius:50%;
+  background:rgba(255,255,255,0.18);
+  border:1px solid rgba(255,255,255,0.35);
+  animation:rise-b linear infinite;
+}
+@keyframes rise-b {
+  0%{transform:translateY(0) scale(.5);opacity:0;}
+  10%{opacity:.7;}
+  90%{opacity:.3;}
+  100%{transform:translateY(-200px) scale(1.1);opacity:0;}
+}
+
+/* Particle snow for deep sea */
+.particle {
+  position:absolute;
+  border-radius:50%;
+  background:rgba(200,230,255,0.3);
+  animation:snow linear infinite;
+}
+@keyframes snow {
+  0%{transform:translateY(-20px);opacity:0;}
+  10%{opacity:.6;}
+  100%{transform:translateY(120px);opacity:0;}
+}
+
+/* === SVG ANIMALS === */
+.animal {
+  position:absolute;
+  pointer-events:none;
+  z-index:6;
+  opacity:0;
+  transition:opacity 1.2s ease;
+}
+.animal.visible { opacity:1; }
+
+/* Swimming fish path animations */
+@keyframes swim-r {
+  0%    { transform: translateX(-220px) translateY(0)   scaleX(1); }
+  49%   { transform: translateX(calc(100vw + 220px)) translateY(-20px) scaleX(1); }
+  49.1% { transform: translateX(calc(100vw + 220px)) translateY(-20px) scaleX(-1); }
+  99%   { transform: translateX(-220px) translateY(0)   scaleX(-1); }
+  99.1% { transform: translateX(-220px) translateY(0)   scaleX(1); }
+  100%  { transform: translateX(-220px) translateY(0)   scaleX(1); }
+}
+@keyframes swim-l {
+  0%    { transform: translateX(calc(100vw + 220px)) translateY(0)   scaleX(-1); }
+  49%   { transform: translateX(-220px) translateY(20px)  scaleX(-1); }
+  49.1% { transform: translateX(-220px) translateY(20px)  scaleX(1); }
+  99%   { transform: translateX(calc(100vw + 220px)) translateY(0)   scaleX(1); }
+  99.1% { transform: translateX(calc(100vw + 220px)) translateY(0)   scaleX(-1); }
+  100%  { transform: translateX(calc(100vw + 220px)) translateY(0)   scaleX(-1); }
+}
+@keyframes float-v {
+  0%,100%{transform:translateY(0) rotate(-3deg);}
+  50%{transform:translateY(-20px) rotate(3deg);}
+}
+@keyframes pulse-glow {
+  0%,100%{filter:drop-shadow(0 0 4px rgba(0,200,255,0.4));}
+  50%{filter:drop-shadow(0 0 16px rgba(0,220,255,0.9));}
+}
+@keyframes lure-pulse {
+  0%,100%{fill:rgba(0,255,200,0.6);}
+  50%{fill:rgba(100,255,255,1);}
+}
+@keyframes tentacle-wave {
+  0%,100%{d:path("M0,0 Q5,10 0,20 Q-5,30 0,40");}
+  50%{d:path("M0,0 Q-5,10 0,20 Q5,30 0,40");}
+}
+@keyframes bob {
+  0%,100%{transform:translateY(0) rotate(-2deg);}
+  50%{transform:translateY(-12px) rotate(2deg);}
+}
+@keyframes crab-scuttle {
+  0%,100%{transform:translateX(0) scaleX(1);}
+  48%{transform:translateX(60px) scaleX(1);}
+  50%{transform:translateX(60px) scaleX(-1);}
+  98%{transform:translateX(0) scaleX(-1);}
+}
+
+/* Whale slow swim */
+@keyframes whale-swim {
+  0%{transform:translateX(-400px);}
+  50%{transform:translateX(calc(100vw + 400px));}
+  50.01%{transform:translateX(calc(100vw + 400px)) scaleX(-1);}
+  100%{transform:translateX(-400px) scaleX(-1);}
+}
+
+/* Seaweed */
+.seaweed-svg {
+  position:absolute; bottom:0;
+  animation:sw-sway 3.5s ease-in-out infinite;
+  transform-origin:bottom center;
+  z-index:4;
+}
+@keyframes sw-sway{
+  0%,100%{transform:rotate(-6deg);}
+  50%{transform:rotate(6deg);}
+}
+
+/* === MAIN CONTENT === */
+.page-wrapper {
+  position:absolute;
+  top:0; left:0; right:0;
+  z-index:10;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:60px 20px 120px;
+}
+
+/* surface zone: original card + gallery */
+.surface-content {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  width:100%;
+  max-width:720px;
+}
+
+.header { text-align:center; margin-bottom:40px; animation:pop-in .8s cubic-bezier(.175,.885,.32,1.275) forwards; }
+@keyframes pop-in{0%{transform:scale(.5) translateY(-30px);opacity:0;}100%{transform:scale(1) translateY(0);opacity:1;}}
+.header h1 {
+  font-family:'Bubblegum Sans',cursive;
+  font-size:clamp(2.2rem,5vw,4rem);
+  color:#fff;
+  text-shadow:0 3px 0 rgba(0,150,180,.5),0 6px 20px rgba(0,0,0,.2);
+  letter-spacing:2px; line-height:1.1;
+}
+.header .subtitle {
+  font-family:'Nunito',sans-serif; font-size:1rem;
+  color:rgba(255,255,255,.85); margin-top:8px; font-weight:600; letter-spacing:1px;
+}
+.shell-row {
+  display:flex; justify-content:center; gap:12px;
+  font-size:2rem; margin-top:10px;
+}
+.shell-row span { animation:shell-dance 2s ease-in-out infinite; }
+.shell-row span:nth-child(1){animation-delay:0s;}
+.shell-row span:nth-child(2){animation-delay:.2s;}
+.shell-row span:nth-child(3){animation-delay:.4s;}
+.shell-row span:nth-child(4){animation-delay:.6s;}
+.shell-row span:nth-child(5){animation-delay:.8s;}
+@keyframes shell-dance{0%,100%{transform:translateY(0) rotate(-5deg);}50%{transform:translateY(-8px) rotate(5deg);}}
+
+/* Message card */
+.message-card {
+  background:linear-gradient(135deg,rgba(255,248,225,.95),rgba(255,204,188,.95));
+  border-radius:30px; padding:50px 50px 40px;
+  max-width:680px; width:100%;
+  box-shadow:0 20px 60px rgba(0,0,0,.2),0 0 0 3px rgba(255,255,255,.5),inset 0 1px 0 rgba(255,255,255,.8);
+  position:relative;
+  animation:card-float .9s cubic-bezier(.175,.885,.32,1.275) .2s both; overflow:hidden;
+}
+@keyframes card-float{0%{transform:translateY(60px) scale(.9);opacity:0;}100%{transform:translateY(0) scale(1);opacity:1;}}
+.card-shell { position:absolute; font-size:2.2rem; opacity:.6; }
+.card-shell.tl{top:12px;left:16px;transform:rotate(-20deg);}
+.card-shell.tr{top:12px;right:16px;transform:rotate(20deg);}
+.card-shell.bl{bottom:12px;left:16px;transform:rotate(15deg);}
+.card-shell.br{bottom:12px;right:16px;transform:rotate(-15deg);}
+.card-wave {
+  position:absolute; top:0; left:0; right:0; height:8px;
+  background:repeating-linear-gradient(90deg,#FF8A65 0,#FF8A65 15px,#26C6DA 15px,#26C6DA 30px,#F48FB1 30px,#F48FB1 45px,#CE93D8 45px,#CE93D8 60px);
+  border-radius:30px 30px 0 0;
+}
+.to-label{font-family:'Bubblegum Sans',cursive;font-size:1rem;color:var(--teal-deep);letter-spacing:3px;text-transform:uppercase;margin-bottom:6px;}
+.to-name{font-family:'Bubblegum Sans',cursive;font-size:2.2rem;color:var(--coral);margin-bottom:24px;text-shadow:2px 2px 0 rgba(255,138,101,.2);}
+.divider{display:flex;align-items:center;gap:10px;margin-bottom:24px;}
+.divider-line{flex:1;height:1.5px;background:linear-gradient(90deg,transparent,var(--coral-light),transparent);}
+.divider-icon{font-size:1.4rem;}
+.message-text {
+  font-family:'Nunito',sans-serif; font-size:1.2rem; line-height:1.9;
+  color:var(--text-dark); font-weight:600;
+  background:rgba(255,255,255,.5); border-radius:16px; padding:24px 28px;
+  border:2px dashed var(--coral-light); position:relative; min-height:120px;
+  cursor:pointer; transition:background .3s,border-color .3s;
+}
+.message-text:hover{background:rgba(255,255,255,.75);border-color:var(--coral);}
+.edit-hint{display:block;font-size:.75rem;color:var(--teal-deep);margin-top:10px;font-style:italic;font-weight:400;}
+.signature-area{margin-top:28px;display:flex;align-items:center;justify-content:flex-end;gap:10px;}
+.from-label{font-family:'Bubblegum Sans',cursive;font-size:1rem;color:var(--teal-deep);letter-spacing:2px;text-transform:uppercase;}
+.from-name{font-family:'Bubblegum Sans',cursive;font-size:1.7rem;color:var(--shell-pink);}
+
+/* Shell gallery */
+.gallery-title {
+  font-family:'Bubblegum Sans',cursive; font-size:1.3rem;
+  color:rgba(255,255,255,.9); text-align:center;
+  margin-top:48px; letter-spacing:2px; animation:pop-in .8s .5s both;
+}
+.shell-gallery {
+  display:flex; gap:16px; flex-wrap:wrap; justify-content:center;
+  margin-top:20px; max-width:680px; animation:pop-in 1s .6s both;
+}
+.shell-card {
+  background:rgba(255,255,255,.2); backdrop-filter:blur(8px);
+  border-radius:20px; padding:18px 22px; text-align:center;
+  border:2px solid rgba(255,255,255,.35); cursor:pointer;
+  transition:transform .2s,background .2s; min-width:90px;
+}
+.shell-card:hover{transform:translateY(-8px) rotate(5deg);background:rgba(255,255,255,.4);}
+.shell-card .emoji{font-size:2.5rem;display:block;}
+.shell-card .name{font-family:'Bubblegum Sans',cursive;font-size:.75rem;color:rgba(255,255,255,.9);margin-top:6px;letter-spacing:1px;}
+
+/* Edit overlay */
+.edit-overlay{display:none;position:fixed;inset:0;background:rgba(0,96,100,.7);z-index:100;align-items:center;justify-content:center;padding:20px;}
+.edit-overlay.active{display:flex;}
+.edit-box{background:#FFF8E1;border-radius:24px;padding:36px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.edit-box h3{font-family:'Bubblegum Sans',cursive;font-size:1.8rem;color:var(--coral);margin-bottom:16px;}
+.edit-box textarea{width:100%;min-height:160px;border:2px solid var(--coral-light);border-radius:14px;padding:14px 16px;font-family:'Nunito',sans-serif;font-size:1.1rem;color:var(--text-dark);resize:vertical;outline:none;background:rgba(255,255,255,.9);transition:border-color .2s;}
+.edit-box textarea:focus{border-color:var(--coral);}
+.edit-box label{font-size:.9rem;font-weight:700;color:var(--teal-deep);margin-bottom:6px;display:block;}
+.edit-box input{width:100%;border:2px solid #FFCCBC;border-radius:10px;padding:10px 14px;font-family:'Nunito',sans-serif;font-size:1rem;margin-bottom:16px;outline:none;background:rgba(255,255,255,.9);}
+.edit-buttons{display:flex;gap:12px;margin-top:20px;}
+.btn-save{flex:1;background:linear-gradient(135deg,var(--coral),#EF5350);color:#fff;border:none;border-radius:50px;padding:14px;font-family:'Bubblegum Sans',cursive;font-size:1.1rem;cursor:pointer;transition:transform .2s;letter-spacing:1px;}
+.btn-save:hover{transform:scale(1.03);}
+.btn-cancel{padding:14px 24px;background:transparent;border:2px solid var(--coral-light);border-radius:50px;font-family:'Nunito',sans-serif;font-weight:700;color:var(--text-dark);cursor:pointer;}
+
+/* Hearts */
+.heart{position:fixed;pointer-events:none;font-size:1.2rem;animation:heart-float 2s ease-out forwards;z-index:200;}
+@keyframes heart-float{0%{transform:translateY(0) scale(.5);opacity:1;}100%{transform:translateY(-120px) scale(1.5);opacity:0;}}
+
+/* === END-OF-OCEAN CHARACTERS === */
+.end-characters {
+  position:fixed;
+  bottom:0; left:0; right:0;
+  z-index:80;
+  pointer-events:none;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  padding:0 5vw;
+  opacity:0;
+  transform:translateY(40px);
+  transition:opacity 0.7s ease, transform 0.7s ease;
+}
+.end-characters.visible {
+  opacity:1;
+  transform:translateY(0);
+  pointer-events:auto;
+}
+.end-char {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  cursor:pointer;
+  position:relative;
+}
+.end-char svg {
+  filter:drop-shadow(0 0 10px rgba(0,200,255,0.4));
+  transition:transform 0.2s;
+}
+.end-char:hover svg { transform:scale(1.08); }
+
+/* Speech bubble */
+.speech-bubble {
+  position:absolute;
+  bottom:calc(100% + 12px);
+  background:rgba(0,15,35,0.92);
+  border:1.5px solid rgba(0,200,255,0.4);
+  border-radius:16px;
+  padding:10px 14px;
+  max-width:200px;
+  min-width:140px;
+  font-family:'Nunito',sans-serif;
+  font-size:0.82rem;
+  color:#c8f0ff;
+  line-height:1.45;
+  font-weight:600;
+  text-align:center;
+  opacity:0;
+  transform:translateY(6px) scale(0.92);
+  transition:opacity 0.4s ease, transform 0.4s ease;
+  pointer-events:none;
+  white-space:normal;
+  backdrop-filter:blur(8px);
+  box-shadow:0 4px 20px rgba(0,0,0,0.5), 0 0 14px rgba(0,150,255,0.15);
+}
+.speech-bubble::after {
+  content:'';
+  position:absolute;
+  top:100%; left:50%; transform:translateX(-50%);
+  border:8px solid transparent;
+  border-top-color:rgba(0,200,255,0.4);
+}
+.speech-bubble::before {
+  content:'';
+  position:absolute;
+  top:calc(100% - 1px); left:50%; transform:translateX(-50%);
+  border:8px solid transparent;
+  border-top-color:rgba(0,15,35,0.92);
+  z-index:1;
+}
+.speech-bubble.show {
+  opacity:1;
+  transform:translateY(0) scale(1);
+}
+.end-crab { left:0; }
+.end-jelly { right:0; }
+.end-char-label {
+  font-family:'Bubblegum Sans',cursive;
+  font-size:0.7rem;
+  color:rgba(150,220,255,0.7);
+  margin-top:4px;
+  letter-spacing:1px;
+}
+.click-hint {
+  font-size:0.65rem;
+  color:rgba(100,180,220,0.5);
+  margin-top:2px;
+  font-style:italic;
+}
+
+/* === BOTTLE === */
+.bottle-char {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  cursor:pointer;
+  position:relative;
+}
+.bottle-char svg {
+  filter:drop-shadow(0 0 12px rgba(0,230,180,0.5));
+  transition:transform 0.2s;
+}
+.bottle-char:hover svg { transform:scale(1.1) rotate(5deg); }
+@keyframes bottle-bob {
+  0%,100%{transform:translateY(0) rotate(-4deg);}
+  50%{transform:translateY(-14px) rotate(4deg);}
+}
+.bottle-svg-wrap { animation: bottle-bob 3.8s ease-in-out infinite; }
+
+/* Letter modal */
+.letter-overlay {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,20,50,0.82);
+  z-index:110;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  backdrop-filter:blur(6px);
+}
+.letter-overlay.active { display:flex; }
+.letter-paper {
+  background:linear-gradient(160deg,#fffde7,#fff8e1,#fff3cd);
+  border-radius:18px;
+  padding:40px 44px 36px;
+  max-width:420px;
+  width:100%;
+  position:relative;
+  box-shadow:0 24px 60px rgba(0,0,0,0.45), 0 0 0 3px rgba(255,255,255,0.5);
+  text-align:center;
+  animation:letter-unfurl 0.55s cubic-bezier(.175,.885,.32,1.275) both;
+}
+@keyframes letter-unfurl {
+  0%{transform:scale(0.4) rotate(-8deg);opacity:0;}
+  100%{transform:scale(1) rotate(0deg);opacity:1;}
+}
+.letter-paper::before {
+  content:'';
+  position:absolute;top:0;left:0;right:0;height:7px;
+  background:repeating-linear-gradient(90deg,#26C6DA 0,#26C6DA 14px,#FF8A65 14px,#FF8A65 28px,#CE93D8 28px,#CE93D8 42px,#FFAB40 42px,#FFAB40 56px);
+  border-radius:18px 18px 0 0;
+}
+.letter-wax { font-size:2.6rem; margin-bottom:10px; }
+.letter-title {
+  font-family:'Bubblegum Sans',cursive;
+  font-size:1.55rem;
+  color:#FF8A65;
+  margin-bottom:14px;
+  letter-spacing:1px;
+}
+.letter-body {
+  font-family:'Nunito',sans-serif;
+  font-size:1.05rem;
+  line-height:1.8;
+  color:#37474F;
+  font-weight:600;
+  margin-bottom:24px;
+}
+.letter-body em { color:#0097A7; font-style:normal; font-size:1.1rem; }
+.btn-scroll-top {
+  background:linear-gradient(135deg,#26C6DA,#0097A7);
+  color:#fff;
+  border:none;
+  border-radius:50px;
+  padding:13px 32px;
+  font-family:'Bubblegum Sans',cursive;
+  font-size:1.1rem;
+  cursor:pointer;
+  letter-spacing:1px;
+  transition:transform .2s, box-shadow .2s;
+  box-shadow:0 4px 14px rgba(0,150,200,0.4);
+}
+.btn-scroll-top:hover { transform:scale(1.04); box-shadow:0 6px 20px rgba(0,150,200,0.6); }
+.letter-close {
+  position:absolute;
+  top:14px;right:18px;
+  background:none;border:none;
+  font-size:1.3rem;cursor:pointer;
+  color:rgba(0,0,0,0.3);
+  transition:color .2s;
+}
+.letter-close:hover { color:rgba(0,0,0,0.6); }
+
+/* Message swap animation */
+@keyframes msg-fadeout {
+  0%{opacity:1;transform:translateY(0);}
+  100%{opacity:0;transform:translateY(-30px);}
+}
+@keyframes msg-fadein {
+  0%{opacity:0;transform:translateY(30px);}
+  100%{opacity:1;transform:translateY(0);}
+}
+.msg-swap-out { animation: msg-fadeout 0.5s forwards; }
+.msg-swap-in  { animation: msg-fadein  0.6s 0.1s forwards; opacity:0; }
+
+
+/* Music button */
+#music-btn {
+  position:fixed;
+  top:16px; left:16px;
+  z-index:200;
+  width:42px; height:42px;
+  border-radius:50%;
+  background:rgba(0,30,60,0.75);
+  backdrop-filter:blur(8px);
+  border:1.5px solid rgba(0,200,255,0.35);
+  color:#fff;
+  font-size:1.2rem;
+  cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  transition:background .25s, transform .2s, box-shadow .25s;
+  box-shadow:0 2px 12px rgba(0,150,255,0.3);
+}
+#music-btn:hover {
+  background:rgba(0,60,120,0.9);
+  transform:scale(1.08);
+  box-shadow:0 4px 18px rgba(0,200,255,0.45);
+}
+
+/* Fact bubble */
+.fact-bubble {
+  position:fixed; bottom:80px; right:20px;
+  background:rgba(0,20,40,.85); backdrop-filter:blur(10px);
+  border:1px solid rgba(0,200,255,.3);
+  border-radius:20px; padding:14px 18px; max-width:220px;
+  font-size:.85rem; color:#b0e8ff; font-weight:600;
+  box-shadow:0 8px 24px rgba(0,0,0,.4),0 0 20px rgba(0,150,200,.2);
+  z-index:50; display:none; line-height:1.5;
+  animation:slide-in .5s cubic-bezier(.175,.885,.32,1.275) forwards;
+}
+.fact-bubble.show{display:block;}
+@keyframes slide-in{0%{transform:translateX(100px);opacity:0;}100%{transform:translateX(0);opacity:1;}}
+.fact-bubble .fact-title{font-family:'Bubblegum Sans',cursive;color:#7df8ff;font-size:.95rem;margin-bottom:4px;}
+
+/* Scroll hint */
+.scroll-hint {
+  position:absolute;
+  bottom:-120px;
+  left:50%; transform:translateX(-50%);
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+  color:rgba(255,255,255,.6);
+  font-family:'Bubblegum Sans',cursive; font-size:.85rem;
+  letter-spacing:2px; animation:hint-bob 2s ease-in-out infinite;
+}
+@keyframes hint-bob{0%,100%{transform:translateX(-50%) translateY(0);}50%{transform:translateX(-50%) translateY(8px);}}
+.scroll-arrow { font-size:1.5rem; }
+
+/* Deep zone creature cards */
+.creature-card {
+  position:absolute;
+  background:rgba(0,10,30,.6);
+  backdrop-filter:blur(12px);
+  border:1px solid rgba(0,200,255,.2);
+  border-radius:16px;
+  padding:12px 18px;
+  max-width:200px;
+  z-index:15;
+  opacity:0;
+  transition:opacity 1s ease;
+  pointer-events:none;
+}
+.creature-card.visible { opacity:1; }
+.creature-card .c-name {
+  font-family:'Bubblegum Sans',cursive;
+  font-size:.8rem; color:#7df8ff; letter-spacing:1px; margin-bottom:4px;
+}
+.creature-card .c-desc {
+  font-size:.7rem; color:rgba(180,220,255,.8); line-height:1.4;
+}
+</style>
+</head>
+<body>
+
+<!-- Background music -->
+<audio id="ocean-audio" loop preload="auto">
+  <source src="https://res.cloudinary.com/dif1l4wjo/video/upload/v1782185297/Fujii_Kaze_-_Shinunoga_E-Wa_Live_at_Nippon_Budokan_2020_1_nfdcly.mp3" type="audio/mpeg">
+</audio>
+<button id="music-btn" title="Toggle music">🔊</button>
+
+
+<div class="ocean-scroll" id="oceanScroll">
+
+  <!-- Fixed depth bg -->
+  <div class="depth-bg" id="depthBg"></div>
+
+  <!-- Sun rays (surface only, fades with scroll) -->
+  <div class="sun-rays" id="sunRays" style="position:fixed;top:-50px;left:50%;transform:translateX(-50%);z-index:1;pointer-events:none;">
+    <div class="ray"></div><div class="ray"></div><div class="ray"></div>
+    <div class="ray"></div><div class="ray"></div><div class="ray"></div>
+  </div>
+
+  <!-- Bubble layer -->
+  <div class="bubble-layer" id="bubbleLayer" style="position:fixed;inset:0;pointer-events:none;z-index:2;"></div>
+
+  <!-- Marine snow (deep) -->
+  <div id="snowLayer" style="position:fixed;inset:0;pointer-events:none;z-index:2;opacity:0;transition:opacity 2s;"></div>
+
+  <!-- ===== ZONE BANNERS ===== -->
+  <div class="zone-banner" id="banner-sunlit" style="top:5vh;"><div class="zone-tag">🌊 Sunlit Zone — 0 to 200m</div></div>
+  <div class="zone-banner" id="banner-twilight" style="top:100vh;"><div class="zone-tag">🌑 Twilight Zone — 200 to 1000m</div></div>
+  <div class="zone-banner" id="banner-midnight" style="top:200vh;"><div class="zone-tag">🕯 Midnight Zone — 1000 to 4000m</div></div>
+  <div class="zone-banner" id="banner-abyssal" style="top:350vh;"><div class="zone-tag">💀 Abyssal Zone — 4000m+</div></div>
+
+  <!-- ===== SEAWEED (surface/bottom) ===== -->
+  <svg class="seaweed-svg" style="left:2%;width:50px;height:110px;animation-delay:0s;" viewBox="0 0 50 110" fill="none">
+    <path d="M25,110 Q10,90 20,70 Q35,50 18,30 Q10,15 25,0" stroke="#2e7d32" stroke-width="7" stroke-linecap="round" fill="none"/>
+    <path d="M25,110 Q38,95 28,75 Q18,55 32,35" stroke="#388e3c" stroke-width="5" stroke-linecap="round" fill="none"/>
+  </svg>
+  <svg class="seaweed-svg" style="left:5%;width:40px;height:90px;animation-delay:.5s;" viewBox="0 0 40 90" fill="none">
+    <path d="M20,90 Q5,72 16,55 Q30,38 15,18 Q8,8 20,0" stroke="#33691e" stroke-width="6" stroke-linecap="round" fill="none"/>
+  </svg>
+  <svg class="seaweed-svg" style="right:3%;width:55px;height:120px;animation-delay:.3s;" viewBox="0 0 55 120" fill="none">
+    <path d="M28,120 Q12,98 22,78 Q38,58 20,35 Q10,16 28,0" stroke="#2e7d32" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <path d="M28,120 Q42,100 32,80 Q20,60 34,38" stroke="#43a047" stroke-width="5" stroke-linecap="round" fill="none"/>
+  </svg>
+  <svg class="seaweed-svg" style="right:7%;width:38px;height:85px;animation-delay:.8s;" viewBox="0 0 38 85" fill="none">
+    <path d="M19,85 Q4,68 15,50 Q28,33 14,16 Q6,6 19,0" stroke="#388e3c" stroke-width="6" stroke-linecap="round" fill="none"/>
+  </svg>
+
+  <!-- ===== CORAL REEF (surface bottom) ===== -->
+  <svg style="position:absolute;bottom:0;left:8%;z-index:4;width:120px;height:80px;" viewBox="0 0 120 80">
+    <!-- brain coral -->
+    <ellipse cx="40" cy="65" rx="32" ry="18" fill="#e57373"/>
+    <path d="M15,60 Q20,50 25,60 Q30,50 35,60 Q40,50 45,60 Q50,50 55,60 Q60,50 65,60" stroke="#c62828" stroke-width="2" fill="none"/>
+    <path d="M15,55 Q20,45 25,55 Q30,45 35,55 Q40,45 45,55 Q50,45 55,55 Q60,45 65,55" stroke="#c62828" stroke-width="1.5" fill="none"/>
+    <!-- staghorn coral -->
+    <path d="M85,78 L88,55 L82,35 M88,55 L95,38 M88,55 L80,40" stroke="#ff7043" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <circle cx="82" cy="33" r="4" fill="#ff8a65"/>
+    <circle cx="95" cy="36" r="3.5" fill="#ff8a65"/>
+    <circle cx="79" cy="38" r="3" fill="#ff8a65"/>
+    <!-- fan coral -->
+    <path d="M105,78 L108,45" stroke="#7b1fa2" stroke-width="3" fill="none"/>
+    <ellipse cx="108" cy="38" rx="12" ry="8" fill="none" stroke="#9c27b0" stroke-width="1.5"/>
+    <path d="M96,38 Q108,30 120,38 M96,35 Q108,27 120,35 M97,41 Q108,33 119,41" stroke="#ce93d8" stroke-width="1" fill="none"/>
+  </svg>
+
+  <svg style="position:absolute;bottom:0;right:12%;z-index:4;width:100px;height:70px;" viewBox="0 0 100 70">
+    <path d="M20,70 L22,42 L16,20 M22,42 L30,22 M22,42 L14,26" stroke="#ff6d00" stroke-width="5" stroke-linecap="round" fill="none"/>
+    <circle cx="16" cy="18" r="4" fill="#ffab40"/>
+    <circle cx="30" cy="20" r="3.5" fill="#ffab40"/>
+    <circle cx="14" cy="24" r="3" fill="#ffab40"/>
+    <ellipse cx="65" cy="58" rx="25" ry="14" fill="#ef9a9a"/>
+    <path d="M42,54 Q48,44 54,54 Q60,44 66,54 Q72,44 78,54 Q84,44 88,54" stroke="#b71c1c" stroke-width="2" fill="none"/>
+  </svg>
+
+  <!-- ===== SURFACE FISH (photo-realistic hybrid) ===== -->
+
+  <!--
+    Each fish uses:
+    1. A <clipPath> that defines the fish silhouette
+    2. A <image> element clipped to that shape (real photo from Wikimedia Commons)
+    3. SVG overlay elements: fin details, eye shine, belly highlight, shadow
+    4. CSS swim animation on the wrapper
+  -->
+
+  <!-- CLOWNFISH (Amphiprioninae) — swims right -->
+  <svg class="animal visible" id="clownfish"
+       style="width:110px;top:25%;animation:swim-r 18s linear infinite;overflow:visible;"
+       viewBox="0 0 110 60">
+    <defs>
+      <!-- Clownfish body silhouette clip -->
+      <clipPath id="clip-clown">
+        <ellipse cx="52" cy="30" rx="36" ry="17"/>
+      </clipPath>
+      <!-- Fin shape clips -->
+      <clipPath id="clip-clown-dorsal">
+        <path d="M28,13 Q42,-2 62,8 L62,16 Q44,6 28,18 Z"/>
+      </clipPath>
+      <linearGradient id="clown-belly" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0)"/>
+        <stop offset="70%" stop-color="rgba(255,200,150,0.25)"/>
+        <stop offset="100%" stop-color="rgba(255,160,100,0.45)"/>
+      </linearGradient>
+      <radialGradient id="clown-shine" cx="70%" cy="30%" r="40%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.55)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </radialGradient>
+      <filter id="clown-shadow">
+        <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,60,120,0.4)"/>
+      </filter>
+    </defs>
+
+    <!-- Body photo clipped to ellipse -->
+    <g filter="url(#clown-shadow)">
+      <image href="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Amphiprion_ocellaris_%28Clown_anemonefish%29_by_Nick_Hobgood.jpg/320px-Amphiprion_ocellaris_%28Clown_anemonefish%29_by_Nick_Hobgood.jpg"
+             x="14" y="10" width="78" height="44"
+             clip-path="url(#clip-clown)"
+             preserveAspectRatio="xMidYMid slice"/>
+      <!-- Belly gradient overlay -->
+      <ellipse cx="52" cy="30" rx="36" ry="17" fill="url(#clown-belly)" clip-path="url(#clip-clown)"/>
+      <!-- Specular shine -->
+      <ellipse cx="52" cy="30" rx="36" ry="17" fill="url(#clown-shine)" clip-path="url(#clip-clown)"/>
+    </g>
+
+    <!-- Tail fin (SVG) -->
+    <path d="M16,30 Q4,18 0,12 Q8,28 0,46 Q4,42 16,30" fill="#e05020" opacity="0.92"/>
+    <!-- Dorsal fin (SVG) -->
+    <path d="M28,13 Q42,-2 62,8 L62,16 Q44,6 28,18 Z" fill="#e86030" opacity="0.88"/>
+    <!-- Pectoral fin -->
+    <path d="M60,30 Q70,22 74,30 Q70,38 60,34 Z" fill="rgba(255,140,80,0.7)"/>
+    <!-- White stripes -->
+    <rect x="28" y="13" width="9" height="34" rx="4" fill="rgba(255,255,255,0.82)"/>
+    <rect x="54" y="15" width="7" height="30" rx="3" fill="rgba(255,255,255,0.78)"/>
+    <!-- Eye -->
+    <circle cx="77" cy="25" r="5.5" fill="#111"/>
+    <circle cx="78.5" cy="23.5" r="2" fill="white"/>
+    <circle cx="79" cy="23" r="0.8" fill="rgba(255,255,255,0.9)"/>
+    <!-- Water caustic flicker on body -->
+    <ellipse cx="45" cy="22" rx="8" ry="3" fill="rgba(255,255,255,0.08)" transform="rotate(-10,45,22)"/>
+    <ellipse cx="60" cy="34" rx="6" ry="2" fill="rgba(255,255,255,0.06)" transform="rotate(8,60,34)"/>
+  </svg>
+
+  <!-- BLUE TANG (Paracanthurus hepatus) — swims left -->
+  <svg class="animal visible" id="bluetang"
+       style="width:95px;top:38%;animation:swim-l 22s linear 4s infinite;overflow:visible;"
+       viewBox="0 0 95 54">
+    <defs>
+      <clipPath id="clip-tang">
+        <ellipse cx="46" cy="27" rx="32" ry="15"/>
+      </clipPath>
+      <linearGradient id="tang-belly" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0)"/>
+        <stop offset="65%" stop-color="rgba(100,160,255,0.2)"/>
+        <stop offset="100%" stop-color="rgba(60,100,200,0.4)"/>
+      </linearGradient>
+      <radialGradient id="tang-shine" cx="65%" cy="28%" r="38%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.5)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </radialGradient>
+      <filter id="tang-shadow">
+        <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,40,120,0.4)"/>
+      </filter>
+    </defs>
+
+    <!-- Body photo -->
+    <g filter="url(#tang-shadow)">
+      <image href="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Paracanthurus_hepatus_in_uShaka_Marine_World.jpg/320px-Paracanthurus_hepatus_in_uShaka_Marine_World.jpg"
+             x="12" y="10" width="72" height="36"
+             clip-path="url(#clip-tang)"
+             preserveAspectRatio="xMidYMid slice"/>
+      <ellipse cx="46" cy="27" rx="32" ry="15" fill="url(#tang-belly)" clip-path="url(#clip-tang)"/>
+      <ellipse cx="46" cy="27" rx="32" ry="15" fill="url(#tang-shine)" clip-path="url(#clip-tang)"/>
+    </g>
+
+    <!-- Tail (forked, yellow) -->
+    <path d="M14,27 Q2,16 0,10 Q8,26 0,42 Q2,38 14,27" fill="#1a6abf" opacity="0.9"/>
+    <path d="M10,22 Q0,14 0,10" stroke="#ffd600" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M10,32 Q0,40 0,44" stroke="#ffd600" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- Dorsal fin -->
+    <path d="M24,12 Q38,-2 56,6 L56,14 Q40,4 24,16 Z" fill="#1565c0" opacity="0.88"/>
+    <!-- Anal fin -->
+    <path d="M28,42 Q38,52 52,46 L50,40 Q38,46 28,40 Z" fill="#1565c0" opacity="0.75"/>
+    <!-- Black palette marking (characteristic) -->
+    <path d="M24,16 Q30,12 48,14 Q56,16 60,22 Q60,32 52,36 Q36,38 22,34 Q16,30 16,24 Q16,18 24,16 Z"
+          fill="none" stroke="#0d1a3a" stroke-width="3" opacity="0.55"/>
+    <!-- Eye -->
+    <circle cx="67" cy="23" r="5" fill="#111"/>
+    <circle cx="68.5" cy="21.5" r="1.8" fill="white"/>
+    <!-- Yellow tail accent -->
+    <path d="M8,18 Q0,8 0,8 Q0,46 0,46 Q0,46 8,36 Q4,27 8,18" fill="#ffd600" opacity="0.85"/>
+    <!-- Caustics -->
+    <ellipse cx="38" cy="20" rx="7" ry="2.5" fill="rgba(255,255,255,0.07)" transform="rotate(-8,38,20)"/>
+  </svg>
+
+  <!-- SEA TURTLE (Chelonia mydas) — swims right -->
+  <svg class="animal visible" id="turtle"
+       style="width:150px;top:47%;animation:swim-r 28s linear 8s infinite;overflow:visible;"
+       viewBox="0 0 150 90">
+    <defs>
+      <clipPath id="clip-turtle">
+        <ellipse cx="72" cy="48" rx="44" ry="30"/>
+      </clipPath>
+      <linearGradient id="turtle-belly" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0)"/>
+        <stop offset="60%" stop-color="rgba(100,180,100,0.15)"/>
+        <stop offset="100%" stop-color="rgba(40,100,40,0.35)"/>
+      </linearGradient>
+      <radialGradient id="turtle-shine" cx="60%" cy="30%" r="42%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.45)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </radialGradient>
+      <filter id="turtle-shadow">
+        <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,60,40,0.4)"/>
+      </filter>
+    </defs>
+
+    <!-- Body photo clipped to shell ellipse -->
+    <g filter="url(#turtle-shadow)">
+      <image href="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/2006_green_sea_turtle_1.jpg/320px-2006_green_sea_turtle_1.jpg"
+             x="26" y="16" width="94" height="66"
+             clip-path="url(#clip-turtle)"
+             preserveAspectRatio="xMidYMid slice"/>
+      <ellipse cx="72" cy="48" rx="44" ry="30" fill="url(#turtle-belly)" clip-path="url(#clip-turtle)"/>
+      <ellipse cx="72" cy="48" rx="44" ry="30" fill="url(#turtle-shine)" clip-path="url(#clip-turtle)"/>
+    </g>
+
+    <!-- Head (SVG) -->
+    <ellipse cx="112" cy="46" rx="16" ry="11" fill="#5a8a50"/>
+    <ellipse cx="112" cy="46" rx="16" ry="11" fill="url(#turtle-shine)" opacity="0.6"/>
+    <!-- Head texture -->
+    <path d="M100,42 Q106,38 114,40 Q118,42 120,46" stroke="#3d6e35" stroke-width="1.2" fill="none" opacity="0.6"/>
+    <!-- Eye -->
+    <circle cx="117" cy="42" r="4" fill="#1a1a1a"/>
+    <circle cx="118.5" cy="41" r="1.4" fill="white"/>
+    <!-- Flippers -->
+    <path d="M54,26 Q36,12 22,14 Q32,22 46,34" fill="#4a7a42" opacity="0.92"/>
+    <path d="M54,70 Q36,84 22,78 Q32,72 46,62" fill="#4a7a42" opacity="0.92"/>
+    <path d="M92,24 Q108,12 118,18 Q108,26 96,34" fill="#4a7a42" opacity="0.88"/>
+    <path d="M92,72 Q108,84 116,76 Q108,68 96,62" fill="#4a7a42" opacity="0.88"/>
+    <!-- Tail -->
+    <path d="M30,48 Q16,46 12,48 Q16,50 30,50" fill="#5a8a50"/>
+    <!-- Scute (shell plate) SVG overlay for realism -->
+    <path d="M58,26 L72,22 L86,26 L90,40 L86,54 L72,58 L58,54 L54,40 Z"
+          fill="none" stroke="rgba(30,80,30,0.5)" stroke-width="1.5"/>
+    <path d="M72,22 L72,16" stroke="rgba(30,80,30,0.35)" stroke-width="1"/>
+    <path d="M86,26 L94,20" stroke="rgba(30,80,30,0.35)" stroke-width="1"/>
+    <path d="M58,26 L50,20" stroke="rgba(30,80,30,0.35)" stroke-width="1"/>
+    <!-- Caustics -->
+    <ellipse cx="65" cy="36" rx="10" ry="3" fill="rgba(255,255,255,0.07)" transform="rotate(-12,65,36)"/>
+    <ellipse cx="80" cy="54" rx="8" ry="2.5" fill="rgba(255,255,255,0.05)" transform="rotate(6,80,54)"/>
+  </svg>
+
+  <!-- Jellyfish (surface) -->
+  <svg class="animal visible" id="jelly1" style="width:70px;top:15%;left:8%;animation:float-v 5s ease-in-out infinite;" viewBox="0 0 72 90">
+      <defs>
+        <radialGradient id="jg1" cx="50%" cy="40%" r="55%">
+          <stop offset="0%" stop-color="#e040fb"/>
+          <stop offset="65%" stop-color="#9c27b0"/>
+          <stop offset="100%" stop-color="#6a0080"/>
+        </radialGradient>
+      </defs>
+      <path d="M6,36 Q6,6 36,6 Q66,6 66,36 Q66,44 36,46 Q6,44 6,36 Z" fill="url(#jg1)"/>
+      <ellipse cx="24" cy="19" rx="10" ry="6" fill="rgba(255,255,255,0.22)" transform="rotate(-10,24,19)"/>
+      <circle cx="27" cy="30" r="3" fill="#2a004a"/>
+      <circle cx="45" cy="30" r="3" fill="#2a004a"/>
+      <circle cx="28.5" cy="28.5" r="1" fill="white"/>
+      <circle cx="46.5" cy="28.5" r="1" fill="white"/>
+      <path d="M28,39 Q36,47 44,39" stroke="#2a004a" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="21" cy="36" rx="5" ry="3" fill="rgba(255,100,200,0.4)"/>
+      <ellipse cx="51" cy="36" rx="5" ry="3" fill="rgba(255,100,200,0.4)"/>
+      <path d="M6,36 Q6,6 36,6 Q66,6 66,36" fill="none" stroke="rgba(240,180,255,0.7)" stroke-width="2"/>
+      <path d="M14,45 Q8,60 11,73 Q14,82 10,88" stroke="#ba68c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M23,46 Q19,62 21,74" stroke="#ce93d8" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <path d="M36,46 Q33,64 36,78 Q38,84 34,88" stroke="#ba68c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M49,46 Q53,62 51,74" stroke="#ce93d8" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <path d="M58,45 Q64,60 61,73 Q58,82 62,88" stroke="#ba68c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </svg>
+
+  <!-- Second jellyfish -->
+  <svg class="animal visible" id="jelly2" style="width:55px;top:28%;right:9%;animation:float-v 6.5s ease-in-out 2s infinite;" viewBox="0 0 72 90">
+      <defs>
+        <radialGradient id="jg2" cx="50%" cy="40%" r="55%">
+          <stop offset="0%" stop-color="#e040fb"/>
+          <stop offset="65%" stop-color="#9c27b0"/>
+          <stop offset="100%" stop-color="#6a0080"/>
+        </radialGradient>
+      </defs>
+      <path d="M6,36 Q6,6 36,6 Q66,6 66,36 Q66,44 36,46 Q6,44 6,36 Z" fill="url(#jg2)"/>
+      <ellipse cx="24" cy="19" rx="10" ry="6" fill="rgba(255,255,255,0.22)" transform="rotate(-10,24,19)"/>
+      <circle cx="27" cy="30" r="3" fill="#2a004a"/>
+      <circle cx="45" cy="30" r="3" fill="#2a004a"/>
+      <circle cx="28.5" cy="28.5" r="1" fill="white"/>
+      <circle cx="46.5" cy="28.5" r="1" fill="white"/>
+      <path d="M28,39 Q36,47 44,39" stroke="#2a004a" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="21" cy="36" rx="5" ry="3" fill="rgba(255,100,200,0.4)"/>
+      <ellipse cx="51" cy="36" rx="5" ry="3" fill="rgba(255,100,200,0.4)"/>
+      <path d="M6,36 Q6,6 36,6 Q66,6 66,36" fill="none" stroke="rgba(240,180,255,0.7)" stroke-width="2"/>
+      <path d="M14,45 Q8,60 11,73 Q14,82 10,88" stroke="#ba68c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M23,46 Q19,62 21,74" stroke="#ce93d8" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <path d="M36,46 Q33,64 36,78 Q38,84 34,88" stroke="#ba68c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M49,46 Q53,62 51,74" stroke="#ce93d8" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <path d="M58,45 Q64,60 61,73 Q58,82 62,88" stroke="#ba68c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </svg>
+
+  <!-- Octopus (surface bottom) -->
+  <svg class="animal visible" id="octopus" style="width:110px;bottom:100px;right:5%;animation:bob 4s ease-in-out infinite;" viewBox="0 0 110 100">
+    <defs>
+      <radialGradient id="octg" cx="50%" cy="45%" r="55%">
+        <stop offset="0%" stop-color="#ce93d8"/>
+        <stop offset="100%" stop-color="#7b1fa2"/>
+      </radialGradient>
+    </defs>
+    <!-- mantle -->
+    <ellipse cx="55" cy="38" rx="32" ry="28" fill="url(#octg)"/>
+    <!-- head spots -->
+    <circle cx="48" cy="30" r="4" fill="rgba(255,255,255,0.15)"/>
+    <circle cx="62" cy="28" r="3" fill="rgba(255,255,255,0.1)"/>
+    <circle cx="55" cy="42" r="5" fill="rgba(255,255,255,0.1)"/>
+    <!-- eyes -->
+    <circle cx="45" cy="36" r="7" fill="rgba(20,0,30,0.8)"/>
+    <circle cx="65" cy="36" r="7" fill="rgba(20,0,30,0.8)"/>
+    <circle cx="47" cy="34" r="2.5" fill="white"/>
+    <circle cx="67" cy="34" r="2.5" fill="white"/>
+    <!-- tentacles with suckers -->
+    <path d="M32,58 Q20,70 18,85 Q22,88 26,82 Q28,72 38,65" stroke="#9c27b0" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M40,62 Q32,78 30,92 Q34,94 37,88 Q40,78 48,70" stroke="#9c27b0" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M50,64 Q48,80 50,95 Q54,97 56,90 Q56,78 58,65" stroke="#9c27b0" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M62,62 Q68,78 70,92 Q74,94 76,88 Q72,78 65,70" stroke="#9c27b0" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <path d="M72,58 Q84,70 86,85 Q90,87 92,82 Q88,72 78,62" stroke="#9c27b0" stroke-width="6" fill="none" stroke-linecap="round"/>
+    <!-- sucker dots on tentacles -->
+    <circle cx="21" cy="74" r="2" fill="#e1bee7" opacity=".7"/>
+    <circle cx="19" cy="84" r="1.5" fill="#e1bee7" opacity=".7"/>
+    <circle cx="31" cy="80" r="2" fill="#e1bee7" opacity=".7"/>
+    <circle cx="30" cy="90" r="1.5" fill="#e1bee7" opacity=".7"/>
+    <circle cx="50" cy="80" r="2" fill="#e1bee7" opacity=".7"/>
+    <circle cx="50" cy="90" r="1.5" fill="#e1bee7" opacity=".7"/>
+    <circle cx="70" cy="80" r="2" fill="#e1bee7" opacity=".7"/>
+    <circle cx="85" cy="74" r="2" fill="#e1bee7" opacity=".7"/>
+  </svg>
+
+  <!-- 🪼 Smiley purple jellyfish near surface bottom -->
+  <svg class="animal visible" id="smiley-jelly" style="width:68px;position:absolute;bottom:145px;left:30%;animation:float-v 5s ease-in-out 0.5s infinite;" viewBox="0 0 72 88">
+    <defs>
+      <radialGradient id="smjg" cx="50%" cy="42%" r="56%">
+        <stop offset="0%" stop-color="#e040fb"/>
+        <stop offset="65%" stop-color="#9c27b0"/>
+        <stop offset="100%" stop-color="#6a0080"/>
+      </radialGradient>
+    </defs>
+    <path d="M6,36 Q6,6 36,6 Q66,6 66,36 Q66,44 36,46 Q6,44 6,36 Z" fill="url(#smjg)"/>
+    <ellipse cx="24" cy="19" rx="10" ry="6" fill="rgba(255,255,255,0.22)" transform="rotate(-10,24,19)"/>
+    <circle cx="27" cy="30" r="3" fill="#2a004a"/>
+    <circle cx="45" cy="30" r="3" fill="#2a004a"/>
+    <circle cx="28.5" cy="28.5" r="1" fill="white"/>
+    <circle cx="46.5" cy="28.5" r="1" fill="white"/>
+    <path d="M28,39 Q36,47 44,39" stroke="#2a004a" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="21" cy="36" rx="5" ry="3" fill="rgba(255,100,200,0.4)"/>
+    <ellipse cx="51" cy="36" rx="5" ry="3" fill="rgba(255,100,200,0.4)"/>
+    <path d="M6,36 Q6,6 36,6 Q66,6 66,36" fill="none" stroke="rgba(240,180,255,0.7)" stroke-width="2"/>
+    <path d="M14,45 Q8,60 11,73 Q14,82 10,88" stroke="#ba68c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M23,46 Q19,62 21,74" stroke="#ce93d8" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    <path d="M36,46 Q33,64 36,78 Q38,84 34,88" stroke="#ba68c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M49,46 Q53,62 51,74" stroke="#ce93d8" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    <path d="M58,45 Q64,60 61,73 Q58,82 62,88" stroke="#ba68c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </svg>
+
+  <!-- 🦀 Orange crab near surface bottom -->
+  <svg class="animal visible" id="surface-crab" style="width:78px;position:absolute;bottom:22px;left:52%;animation:crab-scuttle 8s ease-in-out 1s infinite;" viewBox="0 0 156 93"><image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJwAAABcCAYAAACbUNz5AAAEYElEQVR4nO2dS3bbMAxF6Z6OsoRkrxlkr/ESPE1Han1cSQRBfB7Ed0c9jSVR5BUJgpR9e39rP03A/dFuks8RcsYvyYcoG7GiKxxlI5acCkfZiDW/9/6TohEv/uvhKBvx5G8PR9FICNK0CCGElIPD6EL0RrOIsIrCXZzRkMlbOtFKA6kJYny+m4cjtUEUbYM93MVAlq01xnCXwUI0ThqICI1sWYl+CleUSpI9k14AMg5aqmMEmIKQPlV7tWegCkOOqdyrPQNZqCqgpiBQZWuNwrXWcMXRgCxbawsJdyWpjkCXrbWLC7eCZK+gSwddOA0rSmYFVxoEUDBbvKUrt1sEUbDvr5jrfHzGXMeTMj1clGhR8szgKZ53DwctnJdkGqmOGjlTUA/xlhXOWrYZMXoNexXpIiYNcDGclWgVhsYokFIlUMLNyLaqYN9ftSYTEMJpRVtVssqkC6eRDUm07LJU6t1aS5w0VBPttWGRytIDKYZLKciobJLG3WuE7N7HmtneDEG88AKMyCYV5qwhriJdtfTHEaExnIdslcmKv7Z2yBAvTDipbFcXDSnIf39rP9HSmQj3KtPrTSDKljEJ8Jbt/mi30fg4urcbvsjo7zpIPm/R2COTBu26qFbS6MV2bV4Taj+c5q2hKNlG0ayNWknqQU+UkbZL3Q/nvSUINV6zkiQqXuvFYiOjjTeHws0WDuHmKnH28EnElUwAJKOO90QibWkLtXeLRFoH0gV6qXTbZ2VXtyXl++GyZbO6/sx5Ro/9/pIdgz6yTPVwmhmS14xUwvO1t39n5MW8Hzir4dWDw0KdFebsZs6O89x1O8LILHTkHNJzzgonKas0DuvlUK0ZFmcm76OtaI9eKDPRq02lPB9nKV0k0zFcRdk8zzvLWbk+Pv/9vWo8dyjc3tOhXbLSgipFNpt42ZMvDeou13sDZZRsGZOY2Zzb67l6xyANrW5rqXt4rD1aLC1FPwija7wWoEg3lBaJiAmklW6ZNOXQHYd40jC6S2QPq4bVJE2R2KuHVaQX9XAWsm08V2ykOMjvb6KWywOztVRNjLBSRc9gsf6Zsbt3j+k83P3RbhE3gjYsHrHVR69etodtZIaJIMwsquWPDcvdpj2shLPuVS03P46cu+pvNqS/eS+ll+i0WLdEaBAp2duMtJhuT8q6eelyUGvnAiI1nlT+qJDGCpFwkmWuLKRDZNYERVNP2mPO5ENpL/GQOltg7XYZS1aZFaPItUfIjt+RCsiuLA/hK92/N2bCZSx7VeqxJCJdXbbW+Jv3u3g9PGdx1gqytRaQFlmlIkdZtV4ge7jZDL0k009ygBTOEkqHhVljjCx/zZxPwtE1LXe9EB2mFWv9ylnV9UJyjOmkgY1NekDHcJJvBJJ+nmBQooGi3w4nhBBCCAGHsRBx4SilVWaLOanJ6wQPOi1CrgeFI6FQOBIKhSOhUDgSCtMixIWjtAh7OEIIIYQQQoJB+gIeCZw0FGaTrZJ0FI6E8ge3juN4ojid8gAAAABJRU5ErkJggg==" x="0" y="0" width="156" height="93"/></svg>
+
+  <!-- Seahorse -->
+  <svg class="animal visible" id="seahorse" style="width:40px;bottom:110px;left:7%;animation:float-v 3.5s ease-in-out 1s infinite;" viewBox="0 0 40 90">
+    <path d="M20,8 Q28,8 30,14 Q32,20 26,24 Q22,26 22,30 Q22,40 22,50 Q22,60 20,68 Q18,74 16,78 Q14,82 16,85 Q20,88 24,84" stroke="#f9a825" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <circle cx="24" cy="8" r="8" fill="#fbc02d"/>
+    <circle cx="27" cy="6" r="2.5" fill="#1a1a1a"/>
+    <circle cx="28" cy="5.5" r=".8" fill="white"/>
+    <path d="M24,12 L30,10 L28,14 Z" fill="#f9a825"/>
+    <!-- dorsal fin -->
+    <path d="M22,24 Q30,20 32,26 Q30,28 22,28" fill="#ffcc02" opacity=".8"/>
+    <!-- bony rings -->
+    <line x1="17" y1="34" x2="27" y2="34" stroke="#e65100" stroke-width="1" opacity=".5"/>
+    <line x1="17" y1="40" x2="27" y2="40" stroke="#e65100" stroke-width="1" opacity=".5"/>
+    <line x1="17" y1="46" x2="27" y2="46" stroke="#e65100" stroke-width="1" opacity=".5"/>
+    <line x1="17" y1="52" x2="27" y2="52" stroke="#e65100" stroke-width="1" opacity=".5"/>
+  </svg>
+
+  <!-- ===== WHALE (twilight zone entry) ===== -->
+  <svg class="animal" id="whale" style="width:300px;top:110vh;animation:whale-swim 45s linear 2s infinite;" viewBox="0 0 300 120">
+    <defs>
+      <radialGradient id="whale-g" cx="45%" cy="40%" r="60%">
+        <stop offset="0%" stop-color="#546e7a"/>
+        <stop offset="100%" stop-color="#263238"/>
+      </radialGradient>
+    </defs>
+    <path d="M280,60 Q300,50 295,60 Q300,70 280,60" fill="#37474f"/>
+    <path d="M20,60 Q265,20 280,60 Q265,100 20,60 Z" fill="url(#whale-g)"/>
+    <!-- belly -->
+    <path d="M50,65 Q160,90 250,70" stroke="#78909c" stroke-width="3" fill="none"/>
+    <ellipse cx="150" cy="72" rx="90" ry="15" fill="#607d8b" opacity=".3"/>
+    <!-- flippers -->
+    <path d="M80,70 Q60,100 40,105 Q55,90 75,78" fill="#455a64"/>
+    <!-- dorsal fin -->
+    <path d="M170,40 Q175,15 185,20 Q190,35 180,42" fill="#455a64"/>
+    <!-- eye -->
+    <circle cx="255" cy="55" r="6" fill="#1a2a35"/>
+    <circle cx="257" cy="53" r="2" fill="white"/>
+    <!-- tail -->
+    <path d="M20,60 Q2,45 0,35 Q10,52 0,68 Q2,75 20,60" fill="#546e7a"/>
+    <!-- barnacles -->
+    <circle cx="100" cy="52" r="2.5" fill="#90a4ae" opacity=".6"/>
+    <circle cx="120" cy="48" r="2" fill="#90a4ae" opacity=".5"/>
+    <circle cx="90" cy="56" r="1.5" fill="#90a4ae" opacity=".5"/>
+  </svg>
+
+  <!-- ===== TWILIGHT ZONE CREATURES ===== -->
+
+  <!-- Hatchetfish (very flat, silver, bioluminescent belly) -->
+  <svg class="animal" id="hatchet" style="width:80px;top:130vh;left:20%;animation:swim-r 24s linear 6s infinite;" viewBox="0 0 80 55">
+    <defs>
+      <linearGradient id="hatch-g" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#607d8b"/>
+        <stop offset="60%" stop-color="#b0bec5"/>
+        <stop offset="100%" stop-color="#e3f2fd"/>
+      </linearGradient>
+    </defs>
+    <!-- very compressed body -->
+    <path d="M70,28 Q60,15 30,12 Q10,15 5,28 Q10,42 30,46 Q60,44 70,28 Z" fill="url(#hatch-g)"/>
+    <!-- photophores on belly -->
+    <circle cx="20" cy="42" r="2" fill="#7df8ff" opacity=".9" style="animation:pulse-glow 2s infinite;"/>
+    <circle cx="28" cy="44" r="2" fill="#7df8ff" opacity=".9" style="animation:pulse-glow 2s .3s infinite;"/>
+    <circle cx="36" cy="45" r="2" fill="#7df8ff" opacity=".9" style="animation:pulse-glow 2s .6s infinite;"/>
+    <circle cx="44" cy="44" r="2" fill="#7df8ff" opacity=".9" style="animation:pulse-glow 2s .9s infinite;"/>
+    <circle cx="52" cy="42" r="2" fill="#7df8ff" opacity=".9" style="animation:pulse-glow 2s 1.2s infinite;"/>
+    <!-- eye -->
+    <circle cx="62" cy="26" r="6" fill="#0d1b2a"/>
+    <circle cx="64" cy="24" r="2" fill="white"/>
+    <!-- silver sheen -->
+    <path d="M40,15 Q50,20 58,28 Q50,22 40,18" fill="white" opacity=".3"/>
+    <!-- tail -->
+    <path d="M5,28 Q-2,20 0,14 Q4,26 0,34 Q-2,36 5,28" fill="#78909c"/>
+  </svg>
+
+  <!-- Lanternfish -->
+  <svg class="animal" id="lantern" style="width:65px;top:155vh;right:18%;animation:swim-l 20s linear 10s infinite;" viewBox="0 0 65 38">
+    <defs>
+      <linearGradient id="lant-g" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="#37474f"/>
+        <stop offset="100%" stop-color="#78909c"/>
+      </linearGradient>
+    </defs>
+    <path d="M58,19 Q48,8 25,7 Q6,10 3,19 Q6,28 25,31 Q48,30 58,19 Z" fill="url(#lant-g)"/>
+    <!-- photophore rows on sides and belly -->
+    <circle cx="15" cy="26" r="1.8" fill="#00e5ff" style="animation:pulse-glow 1.8s infinite;"/>
+    <circle cx="22" cy="28" r="1.8" fill="#00e5ff" style="animation:pulse-glow 1.8s .2s infinite;"/>
+    <circle cx="30" cy="29" r="1.8" fill="#00e5ff" style="animation:pulse-glow 1.8s .4s infinite;"/>
+    <circle cx="38" cy="28" r="1.8" fill="#00e5ff" style="animation:pulse-glow 1.8s .6s infinite;"/>
+    <circle cx="46" cy="26" r="1.8" fill="#00e5ff" style="animation:pulse-glow 1.8s .8s infinite;"/>
+    <!-- side row -->
+    <circle cx="20" cy="18" r="1.2" fill="#76ff03" opacity=".8" style="animation:pulse-glow 2.2s .5s infinite;"/>
+    <circle cx="32" cy="17" r="1.2" fill="#76ff03" opacity=".8" style="animation:pulse-glow 2.2s .9s infinite;"/>
+    <circle cx="44" cy="18" r="1.2" fill="#76ff03" opacity=".8" style="animation:pulse-glow 2.2s .3s infinite;"/>
+    <!-- eye (big!) -->
+    <circle cx="51" cy="17" r="5.5" fill="#0a0a0a"/>
+    <circle cx="52.5" cy="15.5" r="1.8" fill="white"/>
+    <path d="M3,19 Q-2,13 0,9 Q3,17 0,23 Q-2,25 3,19" fill="#546e7a"/>
+  </svg>
+
+  <!-- Bioluminescent deep jellyfish (twilight) -->
+  <svg class="animal" id="deep-jelly" style="width:80px;top:140vh;left:65%;animation:float-v 7s ease-in-out 3s infinite;" viewBox="0 0 72 90">
+    <defs>
+      <radialGradient id="djg" cx="50%" cy="40%" r="55%">
+        <stop offset="0%" stop-color="#e040fb"/>
+        <stop offset="65%" stop-color="#9c27b0"/>
+        <stop offset="100%" stop-color="#6a0080"/>
+      </radialGradient>
+    </defs>
+    <path d="M6,36 Q6,6 36,6 Q66,6 66,36 Q66,44 36,46 Q6,44 6,36 Z" fill="url(#djg)"/>
+    <ellipse cx="24" cy="19" rx="10" ry="6" fill="rgba(255,255,255,0.22)" transform="rotate(-10,24,19)"/>
+    <circle cx="27" cy="30" r="3" fill="#2a004a"/>
+    <circle cx="45" cy="30" r="3" fill="#2a004a"/>
+    <circle cx="28.5" cy="28.5" r="1" fill="white"/>
+    <circle cx="46.5" cy="28.5" r="1" fill="white"/>
+    <path d="M28,39 Q36,47 44,39" stroke="#2a004a" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="21" cy="36" rx="5" ry="3" fill="rgba(255,100,200,0.4)"/>
+    <ellipse cx="51" cy="36" rx="5" ry="3" fill="rgba(255,100,200,0.4)"/>
+    <path d="M6,36 Q6,6 36,6 Q66,6 66,36" fill="none" stroke="rgba(240,180,255,0.7)" stroke-width="2"/>
+    <path d="M14,45 Q8,60 11,73 Q14,82 10,88" stroke="#ba68c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M23,46 Q19,62 21,74" stroke="#ce93d8" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    <path d="M36,46 Q33,64 36,78 Q38,84 34,88" stroke="#ba68c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M49,46 Q53,62 51,74" stroke="#ce93d8" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    <path d="M58,45 Q64,60 61,73 Q58,82 62,88" stroke="#ba68c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </svg>
+
+  <!-- ===== MIDNIGHT ZONE CREATURES ===== -->
+
+  <!-- Anglerfish -->
+  <!-- ANGLERFISH — photo hybrid, deep abyssal -->
+  <svg class="animal" id="anglerfish" style="width:150px;top:215vh;left:10%;animation:swim-r 35s linear 2s infinite;overflow:visible;" viewBox="0 0 130 90">
+    <defs>
+      <clipPath id="clip-ang">
+        <ellipse cx="62" cy="52" rx="50" ry="31"/>
+      </clipPath>
+      <radialGradient id="ang-dark" cx="50%" cy="50%" r="55%">
+        <stop offset="0%" stop-color="rgba(0,0,0,0)"/>
+        <stop offset="70%" stop-color="rgba(0,0,0,0.45)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0.85)"/>
+      </radialGradient>
+      <radialGradient id="ang-lure-halo" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="rgba(0,255,160,0.55)"/>
+        <stop offset="60%" stop-color="rgba(0,255,140,0.12)"/>
+        <stop offset="100%" stop-color="rgba(0,255,120,0)"/>
+      </radialGradient>
+      <filter id="ang-glow">
+        <feGaussianBlur stdDeviation="3" result="blur"/>
+        <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+      </filter>
+      <filter id="ang-lure-glow">
+        <feGaussianBlur stdDeviation="4" result="blur"/>
+        <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+      </filter>
+      <filter id="ang-shadow">
+        <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="rgba(0,0,0,0.8)"/>
+      </filter>
+    </defs>
+
+    <!-- Real anglerfish photo, darkened to match abyss -->
+    <g filter="url(#ang-shadow)">
+      <image href="https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Melanocetus_johnsonii.jpg/320px-Melanocetus_johnsonii.jpg"
+             x="10" y="18" width="108" height="70"
+             clip-path="url(#clip-ang)"
+             preserveAspectRatio="xMidYMid slice"/>
+      <!-- Heavy dark vignette to blend into abyss -->
+      <ellipse cx="62" cy="52" rx="50" ry="31" fill="url(#ang-dark)" clip-path="url(#clip-ang)"/>
+    </g>
+
+    <!-- Lure rod -->
+    <path d="M56,30 Q52,15 58,5 Q62,-4 68,0 Q72,5 68,12" stroke="rgba(80,50,10,0.9)" stroke-width="2.5" fill="none"/>
+    <!-- Lure glow halo -->
+    <ellipse cx="68" cy="12" rx="18" ry="18" fill="url(#ang-lure-halo)" style="animation:pulse-glow 1.2s infinite;"/>
+    <!-- Lure bulb -->
+    <circle cx="68" cy="12" r="5.5" fill="rgba(0,255,180,0.75)" filter="url(#ang-lure-glow)" style="animation:pulse-glow 1.2s infinite;"/>
+    <circle cx="68" cy="12" r="2.5" fill="rgba(220,255,240,1)" style="animation:pulse-glow 1.2s infinite;"/>
+
+    <!-- Jaw cavity -->
+    <path d="M88,52 Q108,36 115,52 Q108,68 88,52 Z" fill="rgba(6,2,0,0.96)"/>
+    <!-- Upper fangs — tapered needle polygons curving inward -->
+    <polygon points="93,49 95,49 91,38 90,39" fill="rgba(220,200,140,0.92)"/>
+    <polygon points="99,47 101,47 97.5,36 96.5,37" fill="rgba(220,200,140,0.9)"/>
+    <polygon points="105,47 107,47 104,37 103,38" fill="rgba(200,185,130,0.85)"/>
+    <polygon points="110,48 112,49 110.5,40 109.5,40" fill="rgba(190,175,120,0.8)"/>
+    <!-- Lower fangs — mirror, curved upward -->
+    <polygon points="93,55 95,55 91,66 90,65" fill="rgba(220,200,140,0.92)"/>
+    <polygon points="99,57 101,57 97.5,68 96.5,67" fill="rgba(220,200,140,0.9)"/>
+    <polygon points="105,56 107,56 104,66 103,65" fill="rgba(200,185,130,0.85)"/>
+    <!-- Gum line hint top -->
+    <path d="M89,49 Q98,45 113,50" stroke="rgba(100,60,20,0.5)" stroke-width="1" fill="none"/>
+    <!-- Gum line hint bottom -->
+    <path d="M89,55 Q98,59 113,54" stroke="rgba(100,60,20,0.5)" stroke-width="1" fill="none"/>
+
+    <!-- Eye with cold glow -->
+    <circle cx="80" cy="44" r="9.5" fill="#080300"/>
+    <circle cx="80" cy="44" r="7.5" fill="#1c0d00" stroke="rgba(180,120,0,0.35)" stroke-width="1"/>
+    <circle cx="82" cy="42" r="3" fill="rgba(255,180,60,0.35)"/>
+    <circle cx="83" cy="41" r="1.2" fill="rgba(255,220,120,0.6)"/>
+
+    <!-- Pectoral fin -->
+    <path d="M38,62 Q25,80 18,82 Q28,72 36,67" fill="rgba(20,8,0,0.88)"/>
+    <!-- Dorsal spines -->
+    <path d="M48,25 Q43,14 49,19" stroke="rgba(90,45,5,0.8)" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M58,23 Q54,13 59,17" stroke="rgba(90,45,5,0.8)" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- Tail -->
+    <path d="M14,52 Q2,41 0,34 Q6,48 0,60 Q2,65 14,55 Z" fill="rgba(20,8,0,0.9)"/>
+  </svg>
+
+  <!-- VIPERFISH (Chauliodus sloani) — full SVG redraw, anatomically precise -->
+  <svg class="animal" id="viper" style="width:210px;top:235vh;right:8%;animation:swim-l 32s linear 5s infinite;overflow:visible;" viewBox="0 0 200 70">
+    <defs>
+      <!-- Body gradient: silvery-dark with iridescent flank -->
+      <linearGradient id="vip-body" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%"   stop-color="#1a2540"/>
+        <stop offset="30%"  stop-color="#2a3860"/>
+        <stop offset="50%"  stop-color="#111828"/>
+        <stop offset="80%"  stop-color="#0a1020"/>
+        <stop offset="100%" stop-color="#060810"/>
+      </linearGradient>
+      <!-- Iridescent flank sheen -->
+      <linearGradient id="vip-sheen" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%"   stop-color="rgba(0,150,255,0)"/>
+        <stop offset="30%"  stop-color="rgba(0,200,255,0.22)"/>
+        <stop offset="55%"  stop-color="rgba(80,180,255,0.35)"/>
+        <stop offset="75%"  stop-color="rgba(160,220,255,0.18)"/>
+        <stop offset="100%" stop-color="rgba(0,100,200,0)"/>
+      </linearGradient>
+      <!-- Scale texture (small repeating arcs) -->
+      <pattern id="vip-scales" x="0" y="0" width="8" height="6" patternUnits="userSpaceOnUse">
+        <path d="M0,3 Q4,0 8,3" stroke="rgba(80,120,200,0.18)" stroke-width="0.7" fill="none"/>
+        <path d="M0,6 Q4,3 8,6" stroke="rgba(80,120,200,0.12)" stroke-width="0.5" fill="none"/>
+      </pattern>
+      <filter id="vip-shadow">
+        <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,10,40,0.9)"/>
+      </filter>
+      <filter id="vip-photoglow">
+        <feGaussianBlur stdDeviation="2" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+
+    <!-- ── BODY SHAPE ── deep-sea torpedo, slightly laterally compressed -->
+    <g filter="url(#vip-shadow)">
+      <!-- Main body -->
+      <path d="M185,35 Q160,17 120,20 Q80,22 40,27 Q18,30 4,35
+               Q18,40 40,43 Q80,48 120,50 Q160,53 185,35 Z"
+            fill="url(#vip-body)"/>
+      <!-- Scale texture overlay -->
+      <path d="M185,35 Q160,17 120,20 Q80,22 40,27 Q18,30 4,35
+               Q18,40 40,43 Q80,48 120,50 Q160,53 185,35 Z"
+            fill="url(#vip-scales)" opacity="0.7"/>
+      <!-- Iridescent flank sheen -->
+      <path d="M185,35 Q160,17 120,20 Q80,22 40,27 Q18,30 4,35
+               Q18,40 40,43 Q80,48 120,50 Q160,53 185,35 Z"
+            fill="url(#vip-sheen)"/>
+      <!-- Belly pale stripe -->
+      <path d="M60,41 Q100,45 145,44 Q165,43 180,37 Q165,39 145,40 Q100,41 60,41 Z"
+            fill="rgba(180,210,255,0.08)"/>
+    </g>
+
+    <!-- ── DORSAL FIN — tall, spiny, membranous ── -->
+    <path d="M80,21 L85,8 L90,4 L95,7 L100,2 L105,6 L110,3 L115,7 L120,5 L125,9 L130,20"
+          stroke="rgba(30,55,100,0.75)" stroke-width="1.2" fill="rgba(15,30,70,0.6)"/>
+    <!-- Dorsal fin membrane rays -->
+    <line x1="90" y1="21" x2="90" y2="4"  stroke="rgba(40,70,140,0.4)" stroke-width="0.8"/>
+    <line x1="100" y1="21" x2="100" y2="2" stroke="rgba(40,70,140,0.4)" stroke-width="0.8"/>
+    <line x1="110" y1="21" x2="110" y2="3" stroke="rgba(40,70,140,0.4)" stroke-width="0.8"/>
+    <line x1="120" y1="21" x2="120" y2="5" stroke="rgba(40,70,140,0.35)" stroke-width="0.8"/>
+
+    <!-- Dorsal filament (long trailing spine) -->
+    <path d="M88,20 Q92,8 96,3 Q100,-4 106,0 Q110,4 108,10" stroke="rgba(60,100,180,0.6)" stroke-width="1" fill="none"/>
+    <circle cx="108" cy="10" r="2.5" fill="rgba(0,200,255,0.5)" filter="url(#vip-photoglow)" style="animation:pulse-glow 3s 1s infinite;"/>
+
+    <!-- ── PELVIC FIN ── -->
+    <path d="M75,43 Q68,52 64,56 Q70,50 76,47" fill="rgba(20,35,75,0.7)" stroke="rgba(40,70,140,0.3)" stroke-width="0.8"/>
+
+    <!-- ── TAIL FIN — forked ── -->
+    <path d="M4,35 Q-6,24 -4,16 Q2,28 -4,35" fill="rgba(20,35,70,0.88)"/>
+    <path d="M4,35 Q-6,46 -4,54 Q2,42 -4,35" fill="rgba(20,35,70,0.88)"/>
+    <!-- tail fin rays -->
+    <line x1="4" y1="35" x2="-4" y2="16" stroke="rgba(40,70,140,0.3)" stroke-width="0.7"/>
+    <line x1="4" y1="35" x2="-4" y2="54" stroke="rgba(40,70,140,0.3)" stroke-width="0.7"/>
+
+    <!-- ── HEAD + JAW ── the head is large relative to body -->
+    <!-- Lower jaw — articulates far forward -->
+    <path d="M165,40 Q175,44 185,38 Q190,36 185,33 Q175,28 165,31" fill="#0e1530"/>
+    <!-- Upper jaw snout -->
+    <path d="M165,31 Q178,27 185,33 Q190,30 188,35 Q185,32 178,30 Q170,29 165,31" fill="#121828"/>
+
+    <!-- Jaw lines (open mouth gape) -->
+    <path d="M158,33 Q170,30 186,33" stroke="rgba(50,70,130,0.45)" stroke-width="0.9" fill="none"/>
+    <path d="M158,37 Q170,40 186,37" stroke="rgba(50,70,130,0.45)" stroke-width="0.9" fill="none"/>
+
+    <!-- LOWER JAW — 2 primary fangs + 2 secondary
+         Base seated at y≈38-40, tips curve down+forward to y≈56 max -->
+    <!-- Primary fang L (longest, slight forward curve) -->
+    <path d="M167,39 Q165,47 163,55 Q164,56 166,55 Q167,47 170,39 Z"
+          fill="rgba(215,238,255,0.88)"/>
+    <path d="M167.5,39 Q166,46 164,53 Q165,54 166,53 Q167,46 169,39 Z"
+          fill="rgba(255,255,255,0.3)"/>
+    <!-- Primary fang R -->
+    <path d="M174,39 Q172,46 171,54 Q172,55 174,54 Q175,46 177,39 Z"
+          fill="rgba(215,238,255,0.84)"/>
+    <path d="M174.5,39 Q173,45 172,52 Q173,53 174,52 Q175,45 177,39 Z"
+          fill="rgba(255,255,255,0.26)"/>
+    <!-- Secondary fang L (shorter) -->
+    <path d="M162,38 Q160,44 160,50 Q161,51 163,50 Q162,44 164,38 Z"
+          fill="rgba(200,228,255,0.7)"/>
+    <!-- Secondary fang R -->
+    <path d="M181,38 Q180,44 180,49 Q181,50 183,49 Q182,43 183,38 Z"
+          fill="rgba(200,228,255,0.65)"/>
+
+    <!-- UPPER JAW — shorter recurved teeth pointing downward into mouth -->
+    <path d="M166,34 Q165,28 166,24 Q167,23 168,24 Q168,28 168,34 Z"
+          fill="rgba(205,230,255,0.78)"/>
+    <path d="M172,33 Q171,27 172,23 Q173,22 174,23 Q174,27 174,33 Z"
+          fill="rgba(205,230,255,0.74)"/>
+    <path d="M178,34 Q178,28 179,25 Q180,24 181,25 Q180,29 180,34 Z"
+          fill="rgba(195,222,255,0.65)"/>
+
+    <!-- Gum shadow line -->
+    <path d="M161,39 Q170,42 182,39" stroke="rgba(40,30,70,0.4)" stroke-width="0.9" fill="none"/>
+
+    <!-- ── EYE — large, tubular (adapted for low light) ── -->
+    <circle cx="162" cy="31" r="8"   fill="#020408"/>
+    <circle cx="162" cy="31" r="6.5" fill="#060d1a"/>
+    <!-- Tapetum lucidum reflection ring -->
+    <circle cx="162" cy="31" r="6"   fill="none" stroke="rgba(0,160,255,0.25)" stroke-width="0.8"/>
+    <!-- Pupil with blue-green glint -->
+    <circle cx="162" cy="31" r="4.5" fill="#030810"/>
+    <circle cx="163" cy="29.5" r="2.2" fill="rgba(0,180,255,0.4)"/>
+    <circle cx="163.5" cy="29" r="0.9" fill="rgba(160,230,255,0.8)"/>
+
+    <!-- ── PHOTOPHORES — belly row (ventral bioluminescence) ── -->
+    <!-- Each is a tiny lens organ, SVG concentric circles -->
+    <g filter="url(#vip-photoglow)">
+      <circle cx="30"  cy="43" r="2.2" fill="#00e8ff" style="animation:pulse-glow 2s 0s infinite;"/>
+      <circle cx="30"  cy="43" r="1"   fill="#aff8ff"/>
+      <circle cx="45"  cy="44" r="2.2" fill="#00e8ff" style="animation:pulse-glow 2s .18s infinite;"/>
+      <circle cx="45"  cy="44" r="1"   fill="#aff8ff"/>
+      <circle cx="60"  cy="45" r="2.2" fill="#00e8ff" style="animation:pulse-glow 2s .35s infinite;"/>
+      <circle cx="60"  cy="45" r="1"   fill="#aff8ff"/>
+      <circle cx="75"  cy="46" r="2.2" fill="#00e8ff" style="animation:pulse-glow 2s .52s infinite;"/>
+      <circle cx="75"  cy="46" r="1"   fill="#aff8ff"/>
+      <circle cx="90"  cy="46" r="2.2" fill="#00e8ff" style="animation:pulse-glow 2s .7s infinite;"/>
+      <circle cx="90"  cy="46" r="1"   fill="#aff8ff"/>
+      <circle cx="105" cy="46" r="2.2" fill="#00e8ff" style="animation:pulse-glow 2s .88s infinite;"/>
+      <circle cx="105" cy="46" r="1"   fill="#aff8ff"/>
+      <circle cx="120" cy="45" r="2.2" fill="#00e8ff" style="animation:pulse-glow 2s 1.05s infinite;"/>
+      <circle cx="120" cy="45" r="1"   fill="#aff8ff"/>
+      <circle cx="135" cy="44" r="2"   fill="#00e8ff" style="animation:pulse-glow 2s 1.2s infinite;"/>
+      <circle cx="135" cy="44" r="0.9" fill="#aff8ff"/>
+      <!-- Side photophores (lateral line organs) -->
+      <circle cx="40"  cy="31" r="1.5" fill="#00d4ff" opacity=".75" style="animation:pulse-glow 2.5s .3s infinite;"/>
+      <circle cx="65"  cy="29" r="1.5" fill="#00d4ff" opacity=".75" style="animation:pulse-glow 2.5s .8s infinite;"/>
+      <circle cx="90"  cy="28" r="1.5" fill="#00d4ff" opacity=".75" style="animation:pulse-glow 2.5s 1.3s infinite;"/>
+      <circle cx="115" cy="28" r="1.5" fill="#00d4ff" opacity=".75" style="animation:pulse-glow 2.5s 1.8s infinite;"/>
+    </g>
+
+    <!-- Chin barbel photophore organ -->
+    <path d="M180,42 Q177,52 178,58" stroke="rgba(40,60,120,0.8)" stroke-width="1.4" fill="none"/>
+    <circle cx="178" cy="60" r="4"   fill="rgba(0,255,200,0.6)" filter="url(#vip-photoglow)" style="animation:pulse-glow 1.5s .5s infinite;"/>
+    <circle cx="178" cy="60" r="2"   fill="rgba(200,255,245,0.95)" style="animation:pulse-glow 1.5s .5s infinite;"/>
+  </svg>
+  <!-- Vampire squid -->
+  <!-- VAMPIRE SQUID (Vampyroteuthis infernalis) — photo hybrid -->
+  <svg class="animal" id="vampire" style="width:120px;top:260vh;left:5%;animation:swim-r 38s linear 6s infinite;overflow:visible;" viewBox="0 0 100 90">
+    <defs>
+      <clipPath id="clip-vamp">
+        <ellipse cx="50" cy="34" rx="28" ry="22"/>
+      </clipPath>
+      <radialGradient id="vamp-vignette" cx="50%" cy="50%" r="55%">
+        <stop offset="0%" stop-color="rgba(0,0,0,0)"/>
+        <stop offset="65%" stop-color="rgba(20,0,30,0.5)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0.88)"/>
+      </radialGradient>
+      <radialGradient id="vamp-eye-glow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="rgba(160,0,255,0.7)"/>
+        <stop offset="100%" stop-color="rgba(100,0,200,0)"/>
+      </radialGradient>
+      <filter id="vamp-shadow">
+        <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="rgba(40,0,60,0.7)"/>
+      </filter>
+    </defs>
+
+    <!-- Real vampire squid photo, heavy dark blend -->
+    <g filter="url(#vamp-shadow)">
+      <image href="https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Vampyroteuthis_infernalis.jpg/240px-Vampyroteuthis_infernalis.jpg"
+             x="20" y="10" width="62" height="50"
+             clip-path="url(#clip-vamp)"
+             preserveAspectRatio="xMidYMid slice"/>
+      <ellipse cx="50" cy="34" rx="28" ry="22" fill="url(#vamp-vignette)" clip-path="url(#clip-vamp)"/>
+    </g>
+
+    <!-- Fin-ear flaps (SVG overlay) -->
+    <path d="M30,22 Q21,9 27,17" fill="rgba(50,0,38,0.9)" stroke="rgba(90,0,60,0.7)" stroke-width="1"/>
+    <path d="M70,22 Q79,9 73,17" fill="rgba(50,0,38,0.9)" stroke="rgba(90,0,60,0.7)" stroke-width="1"/>
+
+    <!-- Huge compound eyes -->
+    <circle cx="40" cy="32" r="8.5" fill="#060004"/>
+    <circle cx="60" cy="32" r="8.5" fill="#060004"/>
+    <!-- Iris with purple glow -->
+    <ellipse cx="40" cy="32" rx="18" ry="18" fill="url(#vamp-eye-glow)" style="animation:pulse-glow 3s infinite;"/>
+    <ellipse cx="60" cy="32" rx="18" ry="18" fill="url(#vamp-eye-glow)" style="animation:pulse-glow 3s .5s infinite;"/>
+    <circle cx="41.5" cy="30.5" r="3" fill="rgba(180,80,255,0.5)" style="animation:pulse-glow 3s infinite;"/>
+    <circle cx="61.5" cy="30.5" r="3" fill="rgba(180,80,255,0.5)" style="animation:pulse-glow 3s .5s infinite;"/>
+    <circle cx="42" cy="30" r="1.2" fill="rgba(220,180,255,0.8)"/>
+    <circle cx="62" cy="30" r="1.2" fill="rgba(220,180,255,0.8)"/>
+
+    <!-- Cloak web -->
+    <path d="M28,48 Q35,56 50,59 Q65,56 72,48" fill="rgba(35,0,22,0.85)" stroke="rgba(70,0,45,0.6)" stroke-width="1"/>
+
+    <!-- Arms -->
+    <path d="M28,48 Q17,66 19,80" stroke="rgba(45,0,28,0.95)" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+    <path d="M36,55 Q29,73 31,86" stroke="rgba(45,0,28,0.95)" stroke-width="4"   stroke-linecap="round" fill="none"/>
+    <path d="M50,59 Q47,77 49,90" stroke="rgba(45,0,28,0.95)" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+    <path d="M64,55 Q71,73 69,86" stroke="rgba(45,0,28,0.95)" stroke-width="4"   stroke-linecap="round" fill="none"/>
+    <path d="M72,48 Q83,66 81,80" stroke="rgba(45,0,28,0.95)" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+
+    <!-- Bioluminescent mantle patches -->
+    <circle cx="40" cy="43" r="3.5" fill="rgba(200,0,255,0.35)" style="animation:pulse-glow 2s infinite;"/>
+    <circle cx="60" cy="43" r="3.5" fill="rgba(200,0,255,0.35)" style="animation:pulse-glow 2s .7s infinite;"/>
+    <circle cx="50" cy="25" r="2.2" fill="rgba(220,0,255,0.55)" style="animation:pulse-glow 1.5s .3s infinite;"/>
+    <!-- Arm-tip photophores -->
+    <circle cx="19" cy="80" r="3.5" fill="rgba(200,100,255,0.7)" style="animation:pulse-glow 2.5s infinite;"/>
+    <circle cx="49" cy="90" r="3.5" fill="rgba(200,100,255,0.7)" style="animation:pulse-glow 2.5s .8s infinite;"/>
+    <circle cx="81" cy="80" r="3.5" fill="rgba(200,100,255,0.7)" style="animation:pulse-glow 2.5s 1.5s infinite;"/>
+  </svg>
+  <!-- GULPER EEL (Eurypharynx pelecanoides) — photo hybrid -->
+  <svg class="animal" id="gulper" style="width:230px;top:285vh;left:5%;animation:swim-r 40s linear 15s infinite;overflow:visible;" viewBox="0 0 200 70">
+    <defs>
+      <clipPath id="clip-gulp">
+        <!-- huge pelican jaw + long thin body -->
+        <path d="M168,35 Q188,12 194,35 Q188,58 168,44
+                 Q148,26 108,28 Q68,30 28,33 Q14,34 4,35
+                 Q14,36 28,37 Q68,40 108,42 Q148,44 168,44 Z"/>
+      </clipPath>
+      <linearGradient id="gulp-dark" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="rgba(0,0,0,0.9)"/>
+        <stop offset="30%" stop-color="rgba(0,0,0,0.5)"/>
+        <stop offset="70%" stop-color="rgba(0,0,0,0.3)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0.7)"/>
+      </linearGradient>
+      <radialGradient id="gulp-tail-glow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="rgba(255,40,40,0.7)"/>
+        <stop offset="60%" stop-color="rgba(255,20,20,0.15)"/>
+        <stop offset="100%" stop-color="rgba(255,0,0,0)"/>
+      </radialGradient>
+      <filter id="gulp-shadow">
+        <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="rgba(0,0,10,0.9)"/>
+      </filter>
+    </defs>
+
+    <!-- Real gulper eel photo -->
+    <g filter="url(#gulp-shadow)">
+      <image href="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Eurypharynx_pelecanoides.jpg/320px-Eurypharynx_pelecanoides.jpg"
+             x="0" y="4" width="198" height="62"
+             clip-path="url(#clip-gulp)"
+             preserveAspectRatio="xMidYMid slice"/>
+      <!-- Dark blend overlay, lighter mid-body -->
+      <path d="M168,35 Q188,12 194,35 Q188,58 168,44
+               Q148,26 108,28 Q68,30 28,33 Q14,34 4,35
+               Q14,36 28,37 Q68,40 108,42 Q148,44 168,44 Z"
+            fill="url(#gulp-dark)" clip-path="url(#clip-gulp)"/>
+    </g>
+
+    <!-- Enormous hinged jaw outline -->
+    <path d="M168,35 Q188,12 194,35 Q188,58 168,44 Z"
+          fill="rgba(8,8,14,0.85)" stroke="rgba(40,40,70,0.5)" stroke-width="1"/>
+
+    <!-- Tiny eye near jaw -->
+    <circle cx="180" cy="30" r="4" fill="#040408"/>
+    <circle cx="181" cy="29" r="1.2" fill="rgba(80,120,255,0.35)"/>
+
+    <!-- Bioluminescent tail tip -->
+    <path d="M4,35 Q-7,28 -5,22 Q0,32 -5,40 Q-7,43 4,36" fill="#0d0d1e"/>
+    <ellipse cx="-5" cy="31" rx="12" ry="12" fill="url(#gulp-tail-glow)" style="animation:pulse-glow 2s infinite;"/>
+    <circle cx="-5" cy="31" r="4"   fill="rgba(255,60,60,0.8)"  style="animation:pulse-glow 2s infinite;"/>
+    <circle cx="-5" cy="31" r="2"   fill="rgba(255,140,140,1)"  style="animation:pulse-glow 2s infinite;"/>
+
+    <!-- Body iridescence lines -->
+    <path d="M40,30 Q80,26 120,27 Q150,27 168,33" stroke="rgba(60,80,160,0.25)" stroke-width="1.5" fill="none"/>
+    <path d="M40,40 Q80,44 120,43 Q150,42 168,37" stroke="rgba(60,80,160,0.2)"  stroke-width="1.2" fill="none"/>
+  </svg>
+  <!-- ===== ABYSSAL ZONE CREATURES ===== -->
+
+  <!-- GIANT ISOPOD (Bathynomus giganteus) — photo hybrid -->
+  <svg class="animal" id="isopod" style="width:120px;top:370vh;left:5%;animation:swim-r 44s linear 4s infinite;overflow:visible;" viewBox="0 0 100 60">
+    <defs>
+      <clipPath id="clip-iso">
+        <ellipse cx="50" cy="30" rx="42" ry="22"/>
+      </clipPath>
+      <linearGradient id="iso-dark" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="rgba(0,0,0,0.55)"/>
+        <stop offset="45%" stop-color="rgba(0,0,0,0.1)"/>
+        <stop offset="100%" stop-color="rgba(0,0,0,0.7)"/>
+      </linearGradient>
+      <radialGradient id="iso-shine" cx="35%" cy="30%" r="45%">
+        <stop offset="0%" stop-color="rgba(255,220,180,0.2)"/>
+        <stop offset="100%" stop-color="rgba(255,220,180,0)"/>
+      </radialGradient>
+      <filter id="iso-shadow">
+        <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,0,0.8)"/>
+      </filter>
+    </defs>
+
+    <!-- Real giant isopod photo -->
+    <g filter="url(#iso-shadow)">
+      <image href="https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Giant_isopod.jpg/320px-Giant_isopod.jpg"
+             x="6" y="7" width="88" height="46"
+             clip-path="url(#clip-iso)"
+             preserveAspectRatio="xMidYMid slice"/>
+      <ellipse cx="50" cy="30" rx="42" ry="22" fill="url(#iso-dark)"  clip-path="url(#clip-iso)"/>
+      <ellipse cx="50" cy="30" rx="42" ry="22" fill="url(#iso-shine)" clip-path="url(#clip-iso)"/>
+    </g>
+
+    <!-- Segment plate lines (SVG) -->
+    <line x1="22" y1="9"  x2="22" y2="51" stroke="rgba(40,20,10,0.55)" stroke-width="1.5"/>
+    <line x1="34" y1="8"  x2="34" y2="52" stroke="rgba(40,20,10,0.5)"  stroke-width="1.5"/>
+    <line x1="46" y1="8"  x2="46" y2="52" stroke="rgba(40,20,10,0.5)"  stroke-width="1.5"/>
+    <line x1="58" y1="8"  x2="58" y2="52" stroke="rgba(40,20,10,0.5)"  stroke-width="1.5"/>
+    <line x1="70" y1="9"  x2="70" y2="51" stroke="rgba(40,20,10,0.45)" stroke-width="1.5"/>
+
+    <!-- Pleopod legs — upper -->
+    <path d="M25,11 Q20,3  16,0"  stroke="#7a5c48" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M37,9  Q32,1  28,-2" stroke="#7a5c48" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M50,8  Q48,0  46,-4" stroke="#7a5c48" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M63,9  Q66,1  70,-2" stroke="#7a5c48" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M74,11 Q78,3  82,0"  stroke="#7a5c48" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <!-- Pleopod legs — lower -->
+    <path d="M25,49 Q20,57 16,60" stroke="#7a5c48" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M37,51 Q32,59 28,62" stroke="#7a5c48" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M50,52 Q48,60 46,64" stroke="#7a5c48" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M63,51 Q66,59 70,62" stroke="#7a5c48" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M74,49 Q78,57 82,60" stroke="#7a5c48" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+    <!-- Compound eyes -->
+    <ellipse cx="83" cy="26" rx="6.5" ry="5.5" fill="#1a0e08"/>
+    <ellipse cx="83" cy="26" rx="4.5" ry="3.8" fill="#2e1a0e" stroke="rgba(180,130,80,0.3)" stroke-width="0.8"/>
+    <circle cx="84" cy="25" r="1.4" fill="rgba(210,160,100,0.35)"/>
+
+    <!-- Long antennae -->
+    <path d="M84,22 Q91,11 94,7"  stroke="#9c7a60" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+    <path d="M85,24 Q93,15 97,11" stroke="#9c7a60" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  </svg>
+  <!-- Cusk eel / deep-sea eel (abyssal) -->
+  <svg class="animal" id="abyss-eel" style="width:180px;top:395vh;right:10%;animation:swim-l 50s linear 8s infinite;" viewBox="0 0 180 45">
+    <path d="M170,22 Q140,10 100,12 Q60,14 20,18 Q8,20 2,22 Q8,24 20,26 Q60,30 100,32 Q140,34 170,22 Z" fill="#1a1a2a"/>
+    <!-- subtle iridescence -->
+    <path d="M50,14 Q80,10 110,13" stroke="rgba(100,130,200,0.3)" stroke-width="2" fill="none"/>
+    <path d="M50,30 Q80,34 110,31" stroke="rgba(100,130,200,0.2)" stroke-width="1.5" fill="none"/>
+    <!-- fin along back -->
+    <path d="M20,18 Q60,12 110,12 Q140,10 170,22" stroke="rgba(80,100,180,0.4)" stroke-width="2" fill="none"/>
+    <path d="M20,26 Q60,32 110,32 Q140,34 170,22" stroke="rgba(80,100,180,0.4)" stroke-width="2" fill="none"/>
+    <!-- eye -->
+    <circle cx="160" cy="20" r="5" fill="#050508"/>
+    <circle cx="161" cy="19" r="1.5" fill="rgba(0,180,255,0.2)"/>
+    <!-- tail -->
+    <path d="M2,22 Q-6,16 -4,11 Q0,18 -4,26 Q-6,28 2,22" fill="#1a1a2a"/>
+    <!-- few faint photophores -->
+    <circle cx="40" cy="20" r="1.2" fill="rgba(0,200,255,0.3)" style="animation:pulse-glow 3s infinite;"/>
+    <circle cx="70" cy="20" r="1.2" fill="rgba(0,200,255,0.3)" style="animation:pulse-glow 3s .5s infinite;"/>
+    <circle cx="100" cy="20" r="1.2" fill="rgba(0,200,255,0.3)" style="animation:pulse-glow 3s 1s infinite;"/>
+  </svg>
+
+  <!-- ===== SANDY BOTTOM + CORAL (absolute bottom of page) ===== -->
+  <div id="seafloor" style="position:absolute;bottom:0;left:0;right:0;height:140px;background:linear-gradient(180deg,transparent,#2a1a08 30%,#1a0e04 100%);z-index:3;">
+    <!-- rocks -->
+    <svg style="position:absolute;bottom:0;left:5%;width:200px;height:80px;" viewBox="0 0 200 80">
+      <ellipse cx="50" cy="75" rx="45" ry="18" fill="#2a1a08"/>
+      <ellipse cx="50" cy="68" rx="35" ry="14" fill="#3d2912"/>
+      <ellipse cx="130" cy="75" rx="60" ry="20" fill="#221508"/>
+      <ellipse cx="130" cy="66" rx="48" ry="15" fill="#3a2410"/>
+    </svg>
+
+    <!-- 🪼 Cute smiley purple jellyfish on seafloor -->
+    <svg style="position:absolute;bottom:60px;left:38%;width:72px;height:88px;animation:float-v 4s ease-in-out infinite;" viewBox="0 0 72 88">
+      <defs>
+        <radialGradient id="floor-jg" cx="50%" cy="42%" r="56%">
+          <stop offset="0%" stop-color="#d59df5"/>
+          <stop offset="70%" stop-color="#9b3fd4"/>
+          <stop offset="100%" stop-color="#6a1a9a"/>
+        </radialGradient>
+      </defs>
+      <!-- bell -->
+      <path d="M6,36 Q6,6 36,6 Q66,6 66,36 Q66,44 36,46 Q6,44 6,36 Z" fill="url(#floor-jg)"/>
+      <!-- shiny highlight -->
+      <ellipse cx="26" cy="20" rx="10" ry="7" fill="rgba(255,255,255,0.25)" transform="rotate(-15,26,20)"/>
+      <!-- cute face -->
+      <circle cx="28" cy="30" r="2.5" fill="#3a006a"/>
+      <circle cx="44" cy="30" r="2.5" fill="#3a006a"/>
+      <!-- smile -->
+      <path d="M28,38 Q36,45 44,38" stroke="#3a006a" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <!-- rosy cheeks -->
+      <ellipse cx="22" cy="36" rx="5" ry="3" fill="rgba(255,160,220,0.45)"/>
+      <ellipse cx="50" cy="36" rx="5" ry="3" fill="rgba(255,160,220,0.45)"/>
+      <!-- rim glow -->
+      <path d="M6,36 Q6,6 36,6 Q66,6 66,36" fill="none" stroke="rgba(220,160,255,0.7)" stroke-width="2"/>
+      <!-- tentacles -->
+      <path d="M16,45 Q10,58 13,70 Q16,78 12,86" stroke="#b06ae0" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M24,46 Q20,60 22,72" stroke="#c07af0" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <path d="M36,46 Q33,62 36,76 Q38,83 34,88" stroke="#b06ae0" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M48,46 Q52,60 50,72" stroke="#c07af0" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <path d="M56,45 Q62,58 59,70 Q56,78 60,86" stroke="#b06ae0" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </svg>
+
+    <!-- 🦀 Cute orange crab on seafloor -->
+    <svg style="position:absolute;bottom:18px;right:28%;width:90px;height:66px;animation:crab-scuttle 7s ease-in-out infinite;" viewBox="0 0 156 93"><image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJwAAABcCAYAAACbUNz5AAAEYElEQVR4nO2dS3bbMAxF6Z6OsoRkrxlkr/ESPE1Han1cSQRBfB7Ed0c9jSVR5BUJgpR9e39rP03A/dFuks8RcsYvyYcoG7GiKxxlI5acCkfZiDW/9/6TohEv/uvhKBvx5G8PR9FICNK0CCGElIPD6EL0RrOIsIrCXZzRkMlbOtFKA6kJYny+m4cjtUEUbYM93MVAlq01xnCXwUI0ThqICI1sWYl+CleUSpI9k14AMg5aqmMEmIKQPlV7tWegCkOOqdyrPQNZqCqgpiBQZWuNwrXWcMXRgCxbawsJdyWpjkCXrbWLC7eCZK+gSwddOA0rSmYFVxoEUDBbvKUrt1sEUbDvr5jrfHzGXMeTMj1clGhR8szgKZ53DwctnJdkGqmOGjlTUA/xlhXOWrYZMXoNexXpIiYNcDGclWgVhsYokFIlUMLNyLaqYN9ftSYTEMJpRVtVssqkC6eRDUm07LJU6t1aS5w0VBPttWGRytIDKYZLKciobJLG3WuE7N7HmtneDEG88AKMyCYV5qwhriJdtfTHEaExnIdslcmKv7Z2yBAvTDipbFcXDSnIf39rP9HSmQj3KtPrTSDKljEJ8Jbt/mi30fg4urcbvsjo7zpIPm/R2COTBu26qFbS6MV2bV4Taj+c5q2hKNlG0ayNWknqQU+UkbZL3Q/nvSUINV6zkiQqXuvFYiOjjTeHws0WDuHmKnH28EnElUwAJKOO90QibWkLtXeLRFoH0gV6qXTbZ2VXtyXl++GyZbO6/sx5Ro/9/pIdgz6yTPVwmhmS14xUwvO1t39n5MW8Hzir4dWDw0KdFebsZs6O89x1O8LILHTkHNJzzgonKas0DuvlUK0ZFmcm76OtaI9eKDPRq02lPB9nKV0k0zFcRdk8zzvLWbk+Pv/9vWo8dyjc3tOhXbLSgipFNpt42ZMvDeou13sDZZRsGZOY2Zzb67l6xyANrW5rqXt4rD1aLC1FPwija7wWoEg3lBaJiAmklW6ZNOXQHYd40jC6S2QPq4bVJE2R2KuHVaQX9XAWsm08V2ykOMjvb6KWywOztVRNjLBSRc9gsf6Zsbt3j+k83P3RbhE3gjYsHrHVR69etodtZIaJIMwsquWPDcvdpj2shLPuVS03P46cu+pvNqS/eS+ll+i0WLdEaBAp2duMtJhuT8q6eelyUGvnAiI1nlT+qJDGCpFwkmWuLKRDZNYERVNP2mPO5ENpL/GQOltg7XYZS1aZFaPItUfIjt+RCsiuLA/hK92/N2bCZSx7VeqxJCJdXbbW+Jv3u3g9PGdx1gqytRaQFlmlIkdZtV4ge7jZDL0k009ygBTOEkqHhVljjCx/zZxPwtE1LXe9EB2mFWv9ylnV9UJyjOmkgY1NekDHcJJvBJJ+nmBQooGi3w4nhBBCCAGHsRBx4SilVWaLOanJ6wQPOi1CrgeFI6FQOBIKhSOhUDgSCtMixIWjtAh7OEIIIYQQQoJB+gIeCZw0FGaTrZJ0FI6E8ge3juN4ojid8gAAAABJRU5ErkJggg==" x="0" y="0" width="156" height="93"/></svg>    </svg>
+
+    <!-- second small crab wandering -->
+    <svg style="position:absolute;bottom:14px;left:18%;width:60px;height:46px;animation:crab-scuttle 9s ease-in-out 3s infinite;" viewBox="0 0 156 93"><image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJwAAABcCAYAAACbUNz5AAAEYElEQVR4nO2dS3bbMAxF6Z6OsoRkrxlkr/ESPE1Han1cSQRBfB7Ed0c9jSVR5BUJgpR9e39rP03A/dFuks8RcsYvyYcoG7GiKxxlI5acCkfZiDW/9/6TohEv/uvhKBvx5G8PR9FICNK0CCGElIPD6EL0RrOIsIrCXZzRkMlbOtFKA6kJYny+m4cjtUEUbYM93MVAlq01xnCXwUI0ThqICI1sWYl+CleUSpI9k14AMg5aqmMEmIKQPlV7tWegCkOOqdyrPQNZqCqgpiBQZWuNwrXWcMXRgCxbawsJdyWpjkCXrbWLC7eCZK+gSwddOA0rSmYFVxoEUDBbvKUrt1sEUbDvr5jrfHzGXMeTMj1clGhR8szgKZ53DwctnJdkGqmOGjlTUA/xlhXOWrYZMXoNexXpIiYNcDGclWgVhsYokFIlUMLNyLaqYN9ftSYTEMJpRVtVssqkC6eRDUm07LJU6t1aS5w0VBPttWGRytIDKYZLKciobJLG3WuE7N7HmtneDEG88AKMyCYV5qwhriJdtfTHEaExnIdslcmKv7Z2yBAvTDipbFcXDSnIf39rP9HSmQj3KtPrTSDKljEJ8Jbt/mi30fg4urcbvsjo7zpIPm/R2COTBu26qFbS6MV2bV4Taj+c5q2hKNlG0ayNWknqQU+UkbZL3Q/nvSUINV6zkiQqXuvFYiOjjTeHws0WDuHmKnH28EnElUwAJKOO90QibWkLtXeLRFoH0gV6qXTbZ2VXtyXl++GyZbO6/sx5Ro/9/pIdgz6yTPVwmhmS14xUwvO1t39n5MW8Hzir4dWDw0KdFebsZs6O89x1O8LILHTkHNJzzgonKas0DuvlUK0ZFmcm76OtaI9eKDPRq02lPB9nKV0k0zFcRdk8zzvLWbk+Pv/9vWo8dyjc3tOhXbLSgipFNpt42ZMvDeou13sDZZRsGZOY2Zzb67l6xyANrW5rqXt4rD1aLC1FPwija7wWoEg3lBaJiAmklW6ZNOXQHYd40jC6S2QPq4bVJE2R2KuHVaQX9XAWsm08V2ykOMjvb6KWywOztVRNjLBSRc9gsf6Zsbt3j+k83P3RbhE3gjYsHrHVR69etodtZIaJIMwsquWPDcvdpj2shLPuVS03P46cu+pvNqS/eS+ll+i0WLdEaBAp2duMtJhuT8q6eelyUGvnAiI1nlT+qJDGCpFwkmWuLKRDZNYERVNP2mPO5ENpL/GQOltg7XYZS1aZFaPItUfIjt+RCsiuLA/hK92/N2bCZSx7VeqxJCJdXbbW+Jv3u3g9PGdx1gqytRaQFlmlIkdZtV4ge7jZDL0k009ygBTOEkqHhVljjCx/zZxPwtE1LXe9EB2mFWv9ylnV9UJyjOmkgY1NekDHcJJvBJJ+nmBQooGi3w4nhBBCCAGHsRBx4SilVWaLOanJ6wQPOi1CrgeFI6FQOBIKhSOhUDgSCtMixIWjtAh7OEIIIYQQQoJB+gIeCZw0FGaTrZJ0FI6E8ge3juN4ojid8gAAAABJRU5ErkJggg==" x="0" y="0" width="156" height="93"/></svg>    </svg>
+
+    <!-- vent chimneys (abyssal) -->
+    <svg id="hydro-vent" style="position:absolute;bottom:0;right:20%;width:80px;height:100px;opacity:0;transition:opacity 2s;" viewBox="0 0 80 100">
+      <rect x="30" y="40" width="20" height="60" fill="#1a1010" rx="4"/>
+      <rect x="28" y="38" width="24" height="8" fill="#2a1818" rx="3"/>
+      <ellipse cx="40" cy="30" rx="10" ry="8" fill="rgba(150,100,60,0.2)" style="animation:float-v 3s ease-in-out infinite;"/>
+      <ellipse cx="40" cy="18" rx="8" ry="6" fill="rgba(150,100,60,0.15)" style="animation:float-v 3s ease-in-out 1s infinite;"/>
+      <ellipse cx="40" cy="8" rx="6" ry="5" fill="rgba(150,100,60,0.1)" style="animation:float-v 3s ease-in-out 2s infinite;"/>
+    </svg>
+  </div>
+
+  <!-- Creature info cards (appear with animals) -->
+
+    <!-- ===== MAIN PAGE CONTENT ===== -->
+  <div class="page-wrapper" id="pageWrapper">
+    <div class="surface-content">
+
+      <div class="header">
+        <h1>🐚 A Message From the Sea 🐚</h1>
+        <p class="subtitle">a little note washed up just for you~</p>
+        <div class="shell-row">
+          <span>🐚</span><span>🪸</span><span>🐠</span><span>🪸</span><span>🐚</span>
+        </div>
+      </div>
+
+      <div class="message-card">
+        <div class="card-wave"></div>
+        <div class="card-shell tl">🐚</div>
+        <div class="card-shell tr">🪸</div>
+        <div class="card-shell bl">🪸</div>
+        <div class="card-shell br">🐚</div>
+        <div class="to-label">To:</div>
+        <div class="to-name" id="to-name">Someone Special 💛</div>
+        <div class="divider">
+          <div class="divider-line"></div>
+          <div class="divider-icon">🐡</div>
+          <div class="divider-line"></div>
+        </div>
+        <div class="message-text" id="msg-display" onclick="requestEdit()" style="cursor:default;">
+          <span id="msg-content">Hey you! 🌊 The ocean called and it said to tell you something really important... that you're absolutely amazing, and thinking of you makes everything feel a little more like sunshine on the waves. 🐚✨</span>
+        </div>
+        <div class="signature-area">
+          <span class="from-label">From:</span>
+          <span class="from-name" id="from-name">Your Secret Seal 🦭</span>
+        </div>
+      </div>
+
+      <p class="gallery-title">✨ Shells of the Sea ✨</p>
+      <div class="shell-gallery" id="shell-gallery">
+        <div class="shell-card" onclick="shellFact('conch')"><span class="emoji">🐚</span><span class="name">Conch</span></div>
+        <div class="shell-card" onclick="shellFact('nautilus')"><span class="emoji">🌀</span><span class="name">Nautilus</span></div>
+        <div class="shell-card" onclick="shellFact('coral')"><span class="emoji">🪸</span><span class="name">Coral</span></div>
+        <div class="shell-card" onclick="shellFact('clam')"><span class="emoji">🦪</span><span class="name">Clam</span></div>
+        <div class="shell-card" onclick="shellFact('starfish')"><span class="emoji">⭐</span><span class="name">Starfish</span></div>
+        <div class="shell-card" onclick="shellFact('urchin')"><span class="emoji">🦔</span><span class="name">Sea Urchin</span></div>
+      </div>
+
+      <div class="scroll-hint">
+        <div class="scroll-arrow">↓</div>
+        <div>Dive deeper</div>
+        <div class="scroll-arrow">↓</div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- end oceanScroll -->
+
+<!-- Depth meter HUD -->
+<div class="depth-meter">
+  <div class="zone-name" id="zone-display">Surface</div>
+  <div class="depth-track">
+    <div class="depth-thumb" id="depthThumb"></div>
+  </div>
+  <div class="depth-value" id="depth-display">0m</div>
+</div>
+
+<!-- End-of-ocean characters -->
+<div class="end-characters" id="endCharacters">
+
+  <!-- Crab on the left -->
+  <div class="end-char" id="endCrab" onclick="triggerCrabMsg()">
+    <div class="speech-bubble" id="crabBubble">🦀 Hey! You made it to the bottom! Not many dare come this deep… 🌊</div>
+    <svg width="156" height="92" viewBox="0 0 156 92">
+      <image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJwAAABcCAYAAACbUNz5AAAEYElEQVR4nO2dS3bbMAxF6Z6OsoRkrxlkr/ESPE1Han1cSQRBfB7Ed0c9jSVR5BUJgpR9e39rP03A/dFuks8RcsYvyYcoG7GiKxxlI5acCkfZiDW/9/6TohEv/uvhKBvx5G8PR9FICNK0CCGElIPD6EL0RrOIsIrCXZzRkMlbOtFKA6kJYny+m4cjtUEUbYM93MVAlq01xnCXwUI0ThqICI1sWYl+CleUSpI9k14AMg5aqmMEmIKQPlV7tWegCkOOqdyrPQNZqCqgpiBQZWuNwrXWcMXRgCxbawsJdyWpjkCXrbWLC7eCZK+gSwddOA0rSmYFVxoEUDBbvKUrt1sEUbDvr5jrfHzGXMeTMj1clGhR8szgKZ53DwctnJdkGqmOGjlTUA/xlhXOWrYZMXoNexXpIiYNcDGclWgVhsYokFIlUMLNyLaqYN9ftSYTEMJpRVtVssqkC6eRDUm07LJU6t1aS5w0VBPttWGRytIDKYZLKciobJLG3WuE7N7HmtneDEG88AKMyCYV5qwhriJdtfTHEaExnIdslcmKv7Z2yBAvTDipbFcXDSnIf39rP9HSmQj3KtPrTSDKljEJ8Jbt/mi30fg4urcbvsjo7zpIPm/R2COTBu26qFbS6MV2bV4Taj+c5q2hKNlG0ayNWknqQU+UkbZL3Q/nvSUINV6zkiQqXuvFYiOjjTeHws0WDuHmKnH28EnElUwAJKOO90QibWkLtXeLRFoH0gV6qXTbZ2VXtyXl++GyZbO6/sx5Ro/9/pIdgz6yTPVwmhmS14xUwvO1t39n5MW8Hzir4dWDw0KdFebsZs6O89x1O8LILHTkHNJzzgonKas0DuvlUK0ZFmcm76OtaI9eKDPRq02lPB9nKV0k0zFcRdk8zzvLWbk+Pv/9vWo8dyjc3tOhXbLSgipFNpt42ZMvDeou13sDZZRsGZOY2Zzb67l6xyANrW5rqXt4rD1aLC1FPwija7wWoEg3lBaJiAmklW6ZNOXQHYd40jC6S2QPq4bVJE2R2KuHVaQX9XAWsm08V2ykOMjvb6KWywOztVRNjLBSRc9gsf6Zsbt3j+k83P3RbhE3gjYsHrHVR69etodtZIaJIMwsquWPDcvdpj2shLPuVS03P46cu+pvNqS/eS+ll+i0WLdEaBAp2duMtJhuT8q6eelyUGvnAiI1nlT+qJDGCpFwkmWuLKRDZNYERVNP2mPO5ENpL/GQOltg7XYZS1aZFaPItUfIjt+RCsiuLA/hK92/N2bCZSx7VeqxJCJdXbbW+Jv3u3g9PGdx1gqytRaQFlmlIkdZtV4ge7jZDL0k009ygBTOEkqHhVljjCx/zZxPwtE1LXe9EB2mFWv9ylnV9UJyjOmkgY1NekDHcJJvBJJ+nmBQooGi3w4nhBBCCAGHsRBx4SilVWaLOanJ6wQPOi1CrgeFI6FQOBIKhSOhUDgSCtMixIWjtAh7OEIIIYQQQoJB+gIeCZw0FGaTrZJ0FI6E8ge3juN4ojid8gAAAABJRU5ErkJggg=="
+             x="0" y="0" width="156" height="92"/>
+    </svg>
+    </svg>
+    <div class="end-char-label">Crusty the Crab</div>
+    <div class="click-hint">tap to hear again</div>
+  </div>
+
+  <!-- Bottle in the center -->
+  <div class="bottle-char" id="endBottle" onclick="openBottleLetter()">
+    <div class="speech-bubble" id="bottleBubble" style="min-width:160px;">🍾 A message washed ashore… click me!</div>
+    <div class="bottle-svg-wrap">
+      <svg width="56" height="110" viewBox="0 0 56 110" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bottle-g" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="rgba(100,220,180,0.85)"/>
+            <stop offset="50%" stop-color="rgba(40,180,140,0.75)"/>
+            <stop offset="100%" stop-color="rgba(20,120,100,0.9)"/>
+          </linearGradient>
+          <linearGradient id="bottle-shine" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="rgba(255,255,255,0.35)"/>
+            <stop offset="40%" stop-color="rgba(255,255,255,0.08)"/>
+            <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+          </linearGradient>
+        </defs>
+        <!-- cork -->
+        <rect x="19" y="2" width="18" height="11" rx="4" fill="#c8a462"/>
+        <rect x="21" y="5" width="14" height="5" rx="2" fill="#e8c47a"/>
+        <!-- neck -->
+        <rect x="20" y="12" width="16" height="14" rx="3" fill="url(#bottle-g)"/>
+        <rect x="20" y="12" width="7" height="14" rx="2" fill="url(#bottle-shine)"/>
+        <!-- shoulder -->
+        <path d="M20,26 Q12,30 10,38 L10,95 Q10,102 28,102 Q46,102 46,95 L46,38 Q44,30 36,26 Z" fill="url(#bottle-g)"/>
+        <!-- shine on body -->
+        <path d="M14,38 Q13,50 14,70 Q16,76 18,70 Q17,50 16,38 Z" fill="url(#bottle-shine)"/>
+        <!-- bottom curve -->
+        <ellipse cx="28" cy="96" rx="17" ry="6" fill="rgba(20,100,80,0.6)"/>
+        <!-- scroll of paper inside -->
+        <rect x="19" y="52" width="18" height="24" rx="3" fill="rgba(255,248,220,0.75)"/>
+        <line x1="22" y1="58" x2="34" y2="58" stroke="rgba(180,140,80,0.6)" stroke-width="1.5"/>
+        <line x1="22" y1="63" x2="34" y2="63" stroke="rgba(180,140,80,0.5)" stroke-width="1.2"/>
+        <line x1="22" y1="68" x2="30" y2="68" stroke="rgba(180,140,80,0.4)" stroke-width="1"/>
+        <!-- water ripple at base -->
+        <ellipse cx="28" cy="104" rx="22" ry="5" fill="none" stroke="rgba(0,200,180,0.3)" stroke-width="1.5"/>
+        <ellipse cx="28" cy="108" rx="16" ry="3" fill="none" stroke="rgba(0,200,180,0.2)" stroke-width="1"/>
+      </svg>
+    </div>
+    <div class="end-char-label">Mystery Bottle</div>
+    <div class="click-hint">tap to open</div>
+  </div>
+
+  <!-- Jellyfish on the right -->
+  <div class="end-char" id="endJelly" onclick="triggerJellyMsg()">
+    <div class="speech-bubble" id="jellyBubble">🪼 The ocean carries every feeling you've ever had… even the ones without words. ✨</div>
+    <svg width="72" height="90" viewBox="0 0 72 90">
+      <defs>
+        <radialGradient id="ejg" cx="50%" cy="42%" r="56%">
+          <stop offset="0%" stop-color="#e040fb"/>
+          <stop offset="65%" stop-color="#9c27b0"/>
+          <stop offset="100%" stop-color="#6a0080"/>
+        </radialGradient>
+      </defs>
+      <path d="M6,36 Q6,6 36,6 Q66,6 66,36 Q66,44 36,46 Q6,44 6,36 Z" fill="url(#ejg)"/>
+      <ellipse cx="24" cy="19" rx="10" ry="6" fill="rgba(255,255,255,0.22)" transform="rotate(-10,24,19)"/>
+      <circle cx="27" cy="30" r="3" fill="#2a004a"/>
+      <circle cx="45" cy="30" r="3" fill="#2a004a"/>
+      <circle cx="28.5" cy="28.5" r="1" fill="white"/>
+      <circle cx="46.5" cy="28.5" r="1" fill="white"/>
+      <path d="M28,39 Q36,47 44,39" stroke="#2a004a" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="21" cy="36" rx="5" ry="3" fill="rgba(255,100,200,0.4)"/>
+      <ellipse cx="51" cy="36" rx="5" ry="3" fill="rgba(255,100,200,0.4)"/>
+      <path d="M6,36 Q6,6 36,6 Q66,6 66,36" fill="none" stroke="rgba(240,180,255,0.7)" stroke-width="2"/>
+      <path d="M14,45 Q8,60 11,73 Q14,82 10,88" stroke="#ba68c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M23,46 Q19,62 21,74" stroke="#ce93d8" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <path d="M36,46 Q33,64 36,78 Q38,84 34,88" stroke="#ba68c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M49,46 Q53,62 51,74" stroke="#ce93d8" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <path d="M58,45 Q64,60 61,73 Q58,82 62,88" stroke="#ba68c8" stroke-width="2" fill="none" stroke-linecap="round"/>
+    </svg>
+    <div class="end-char-label">Jelly the Jellyfish</div>
+    <div class="click-hint">tap to hear again</div>
+  </div>
+
+</div>
+
+<!-- Bottle letter modal -->
+<div class="letter-overlay" id="letterOverlay">
+  <div class="letter-paper">
+    <button class="letter-close" onclick="closeBottleLetter()">✕</button>
+    <div class="letter-wax">🍾</div>
+    <div class="letter-title">A Message in a Bottle</div>
+    <div class="letter-body">
+      You found it! This bottle drifted all the way from the surface…<br><br>
+      <em>✨ Swim back up to the sunlit waters ✨</em><br><br>
+      A new message is waiting for you there, carried in on the tide. 🌊
+    </div>
+    <button class="btn-scroll-top" onclick="scrollToTopAndReveal()">🌊 Swim to the Surface</button>
+  </div>
+</div>
+
+<!-- Password overlay -->
+<div class="edit-overlay" id="pwOverlay" style="z-index:101;">
+  <div class="edit-box" style="max-width:380px;text-align:center;">
+    <h3>🔐 Author Access</h3>
+    <p style="font-size:.95rem;color:#0097A7;margin-bottom:18px;font-family:'Nunito',sans-serif;">Enter the secret code to edit this message.</p>
+    <input type="password" id="pw-input" placeholder="Secret code…" style="width:100%;border:2px solid #FFCCBC;border-radius:10px;padding:12px 14px;font-family:'Nunito',sans-serif;font-size:1.1rem;margin-bottom:6px;outline:none;background:rgba(255,255,255,.9);text-align:center;">
+    <div id="pw-error" style="color:#EF5350;font-size:.82rem;min-height:18px;margin-bottom:10px;font-family:'Nunito',sans-serif;"></div>
+    <div class="edit-buttons">
+      <button class="btn-save" onclick="checkPassword()">🐚 Enter</button>
+      <button class="btn-cancel" onclick="closePwOverlay()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit overlay -->
+<div class="edit-overlay" id="editOverlay">
+  <div class="edit-box">
+    <h3>🐚 Write Your Message</h3>
+    <label>To:</label>
+    <input type="text" id="edit-to" placeholder="Someone Special">
+    <label>Your message:</label>
+    <textarea id="edit-msg" placeholder="Write your heartfelt message here..."></textarea>
+    <label style="margin-top:14px;">From:</label>
+    <input type="text" id="edit-from" placeholder="Your Secret Seal 🦭" style="margin-top:6px;">
+    <div class="edit-buttons">
+      <button class="btn-save" onclick="saveMessage()">🐚 Save Message</button>
+      <button class="btn-cancel" onclick="closeEdit()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fun fact bubble -->
+<div class="fact-bubble" id="factBubble">
+  <div class="fact-title" id="factTitle">Did you know?</div>
+  <div id="factText">...</div>
+</div>
+
+<script>
+// ========= DEPTH / SCROLL SYSTEM =========
+const depthColors = [
+  { p: 0.00, top:'#87CEEB', bot:'#29B6F6' },
+  { p: 0.12, top:'#29B6F6', bot:'#0288D1' },
+  { p: 0.25, top:'#0288D1', bot:'#01579B' },
+  { p: 0.35, top:'#024f84', bot:'#012d54' },
+  { p: 0.45, top:'#013060', bot:'#020e28' },
+  { p: 0.58, top:'#040818', bot:'#030508' },
+  { p: 0.75, top:'#030407', bot:'#020203' },
+  { p: 1.00, top:'#010102', bot:'#010101' },
+];
+
+const zones = [
+  { name:'Surface', depthStart:0,  depthEnd:200  },
+  { name:'Twilight', depthStart:200, depthEnd:1000 },
+  { name:'Midnight', depthStart:1000,depthEnd:4000 },
+  { name:'Abyssal',  depthStart:4000,depthEnd:11000},
+];
+
+// Lerp a single hex colour channel
+function lerpHex(hex1, hex2, t) {
+  const parse = h => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
+  const toHex = v => v.toString(16).padStart(2,'0');
+  const c1 = parse(hex1), c2 = parse(hex2);
+  return '#' + c1.map((v,i) => toHex(Math.round(v + (c2[i]-v)*t))).join('');
+}
+
+function getDepthBg(progress) {
+  // find segment
+  let seg = depthColors.length - 2;
+  for (let i = 0; i < depthColors.length - 1; i++) {
+    if (progress <= depthColors[i+1].p) { seg = i; break; }
+  }
+  const a = depthColors[seg], b = depthColors[seg+1];
+  const t = (progress - a.p) / (b.p - a.p);
+  const top = lerpHex(a.top, b.top, t);
+  const bot = lerpHex(a.bot, b.bot, t);
+  return `linear-gradient(180deg, ${top} 0%, ${bot} 100%)`;
+}
+
+const depthBg = document.getElementById('depthBg');
+const sunRays = document.getElementById('sunRays');
+const snowLayer = document.getElementById('snowLayer');
+const depthThumb = document.getElementById('depthThumb');
+const depthDisplay = document.getElementById('depth-display');
+const zoneDisplay = document.getElementById('zone-display');
+const scrollEl = document.documentElement;
+
+// Create marine snow particles
+const snowCount = 60;
+for (let i = 0; i < snowCount; i++) {
+  const p = document.createElement('div');
+  p.className = 'particle';
+  const size = 1 + Math.random() * 3;
+  p.style.cssText = `
+    width:${size}px;height:${size}px;
+    left:${Math.random()*100}%;
+    top:${Math.random()*100}%;
+    animation-duration:${10+Math.random()*20}s;
+    animation-delay:${Math.random()*15}s;
+    opacity:${0.2+Math.random()*0.5};
+  `;
+  snowLayer.appendChild(p);
+}
+
+// Scroll bubbles
+const bubbleContainer = document.getElementById('bubbleLayer');
+for (let i = 0; i < 30; i++) {
+  const b = document.createElement('div');
+  b.className = 'bubble';
+  const size = 4 + Math.random()*16;
+  b.style.cssText = `
+    width:${size}px;height:${size}px;
+    left:${Math.random()*100}%;
+    bottom:-30px;
+    animation-duration:${8+Math.random()*14}s;
+    animation-delay:${Math.random()*12}s;
+  `;
+  bubbleContainer.appendChild(b);
+}
+
+// Animals to reveal by scroll progress
+const animalReveal = [
+  { id:'whale',       threshold:0.12 },
+  { id:'hatchet',     threshold:0.17 },
+  { id:'lantern',     threshold:0.20 },
+  { id:'deep-jelly',  threshold:0.18 },
+  { id:'anglerfish',  threshold:0.28 },
+  { id:'viper',       threshold:0.30 },
+  { id:'vampire',     threshold:0.34 },
+  { id:'gulper',      threshold:0.36 },
+  { id:'isopod',      threshold:0.48 },
+  { id:'abyss-eel',   threshold:0.50 },
+];
+
+const bannerReveal = [
+  { id:'banner-sunlit',   threshold:0.0 },
+  { id:'banner-twilight', threshold:0.12 },
+  { id:'banner-midnight', threshold:0.26 },
+  { id:'banner-abyssal',  threshold:0.46 },
+];
+
+function lerp(a,b,t){ return a + (b-a)*t; }
+
+function onScroll() {
+  const scrollTop = window.scrollY;
+  const maxScroll = Math.max(1, document.body.scrollHeight - window.innerHeight);
+  const progress = Math.min(Math.max(scrollTop / maxScroll, 0), 1);
+  const simDepth = Math.round(progress * 5000);
+
+  // Depth display
+  depthDisplay.textContent = simDepth + 'm';
+  depthThumb.style.top = (progress * 110) + 'px';
+
+  // Zone name
+  let zoneName = 'Sunlit Zone';
+  if (simDepth < 200) zoneName='Sunlit Zone';
+  else if (simDepth < 1000) zoneName='Twilight Zone';
+  else if (simDepth < 4000) zoneName='Midnight Zone';
+  else zoneName='Abyssal Zone';
+  zoneDisplay.textContent = zoneName;
+
+  // Smooth background
+  depthBg.style.background = getDepthBg(progress);
+
+  // Sun rays
+  const rayOpacity = Math.max(0, 1 - Math.pow(progress / 0.30, 2));
+  sunRays.style.opacity = rayOpacity;
+
+  // Bubbles
+  bubbleContainer.style.opacity = Math.max(0.05, 1 - progress * 2.2);
+
+  // Marine snow
+  const snowOpacity = Math.min(1, Math.max(0, (progress - 0.30) * 5));
+  snowLayer.style.opacity = snowOpacity;
+
+  // Hydrothermal vent
+  const vent = document.getElementById('hydro-vent');
+  if (vent) vent.style.opacity = Math.min(1, Math.max(0, (progress - 0.46)*10));
+
+  // Reveal animals
+  animalReveal.forEach(a => {
+    const el = document.getElementById(a.id);
+    if (el) {
+      if (progress >= a.threshold) el.classList.add('visible');
+      else el.classList.remove('visible');
+    }
+  });
+
+  // Reveal banners (briefly)
+  bannerReveal.forEach(b => {
+    const el = document.getElementById(b.id);
+    if (el) {
+      const show = progress >= b.threshold && progress < b.threshold + 0.08;
+      el.classList.toggle('visible', show);
+    }
+  });
+
+  // End-of-scroll characters
+  checkEndCharacters(progress);
+}
+
+window.addEventListener('scroll', onScroll, { passive:true });
+
+// Init after page fully loaded so scrollHeight is correct
+window.addEventListener('load', () => {
+  requestAnimationFrame(() => {
+    onScroll();
+    // Show sunlit banner briefly
+    const sunlit = document.getElementById('banner-sunlit');
+    if (sunlit) {
+      sunlit.classList.add('visible');
+      setTimeout(() => sunlit.classList.remove('visible'), 3000);
+    }
+  });
+});
+
+// ========= FACTS =========
+const facts = {
+  conch: { title:"🐚 Conch Shell!", text:"You can hear the ocean in a conch shell — it's the echo of ambient sound amplified by the shell's spiral chamber!" },
+  nautilus: { title:"🌀 Nautilus!", text:"The nautilus shell grows in a perfect golden spiral — same ratio found in galaxies and sunflowers!" },
+  coral: { title:"🪸 Coral!", text:"Reefs cover <1% of the ocean but support 25% of all marine species — true MVPs of the sea!" },
+  clam: { title:"🦪 Clam!", text:"Some giant clams live over 500 years! Older than most countries." },
+  starfish: { title:"⭐ Starfish!", text:"Starfish have no brain or blood — they pump seawater through their bodies to move nutrients around." },
+  urchin: { title:"🦔 Sea Urchin!", text:"Sea urchins can use their spines as tiny legs and move across the seafloor. Some species live 200+ years!" }
+};
+
+function shellFact(type) {
+  const f = facts[type];
+  const bubble = document.getElementById('factBubble');
+  document.getElementById('factTitle').textContent = f.title;
+  document.getElementById('factText').textContent = f.text;
+  bubble.classList.remove('show');
+  void bubble.offsetWidth;
+  bubble.classList.add('show');
+  clearTimeout(window._factTimer);
+  window._factTimer = setTimeout(()=>bubble.classList.remove('show'), 5000);
+}
+
+// ========= AUTHOR LOCK =========
+const AUTHOR_CODE = 'ocean2025'; // ← change this to your own secret code
+
+function requestEdit() {
+  document.getElementById('pw-input').value = '';
+  document.getElementById('pw-error').textContent = '';
+  document.getElementById('pwOverlay').classList.add('active');
+  setTimeout(() => document.getElementById('pw-input').focus(), 100);
+}
+function closePwOverlay() {
+  document.getElementById('pwOverlay').classList.remove('active');
+}
+function checkPassword() {
+  const val = document.getElementById('pw-input').value;
+  if (val === AUTHOR_CODE) {
+    closePwOverlay();
+    openEdit();
+  } else {
+    document.getElementById('pw-error').textContent = '🌊 Wrong code — the sea keeps its secrets!';
+    document.getElementById('pw-input').value = '';
+  }
+}
+document.getElementById('pw-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') checkPassword();
+});
+
+function openEdit() {
+  document.getElementById('edit-to').value = document.getElementById('to-name').textContent.replace(' 💛','').trim();
+  document.getElementById('edit-msg').value = document.getElementById('msg-content').textContent.trim();
+  document.getElementById('edit-from').value = document.getElementById('from-name').textContent;
+  document.getElementById('editOverlay').classList.add('active');
+}
+function closeEdit() { document.getElementById('editOverlay').classList.remove('active'); }
+function saveMessage() {
+  const to = document.getElementById('edit-to').value || 'Someone Special';
+  const msg = document.getElementById('edit-msg').value || document.getElementById('msg-content').textContent.trim();
+  const from = document.getElementById('edit-from').value || 'Your Secret Seal 🦭';
+  document.getElementById('to-name').textContent = to + ' 💛';
+  document.getElementById('msg-content').textContent = msg;
+  document.getElementById('from-name').textContent = from;
+  closeEdit();
+  spawnHearts();
+}
+function spawnHearts() {
+  const hearts = ['💕','🌊','🐚','✨','💛','🫧'];
+  for (let i = 0; i < 12; i++) {
+    setTimeout(()=>{
+      const h = document.createElement('div');
+      h.className = 'heart';
+      h.textContent = hearts[Math.floor(Math.random()*hearts.length)];
+      h.style.left = (20+Math.random()*60)+'%';
+      h.style.top = (40+Math.random()*30)+'%';
+      document.body.appendChild(h);
+      setTimeout(()=>h.remove(), 2000);
+    }, i*100);
+  }
+}
+// ========= END-OF-OCEAN CHARACTERS =========
+let endCharsTriggered = false;
+let crabTimer = null, jellyTimer = null, bottleTimer = null;
+
+function checkEndCharacters(progress) {
+  const chars = document.getElementById('endCharacters');
+  if (progress >= 0.97) {
+    if (!endCharsTriggered) {
+      endCharsTriggered = true;
+      chars.classList.add('visible');
+      // auto-show both bubbles after they slide in
+      setTimeout(() => {
+        showBubble('crabBubble', 5000);
+        setTimeout(() => showBubble('jellyBubble', 5000), 600);
+        setTimeout(() => showBubble('bottleBubble', 4500), 1200);
+      }, 700);
+    }
+  } else {
+    if (endCharsTriggered) {
+      endCharsTriggered = false;
+      chars.classList.remove('visible');
+      hideBubble('crabBubble');
+      hideBubble('jellyBubble');
+      hideBubble('bottleBubble');
+    }
+  }
+}
+
+function showBubble(id, duration) {
+  const b = document.getElementById(id);
+  if (!b) return;
+  b.classList.add('show');
+  const timer = setTimeout(() => b.classList.remove('show'), duration);
+  if (id === 'crabBubble') crabTimer = timer;
+  else if (id === 'jellyBubble') jellyTimer = timer;
+  else if (id === 'bottleBubble') bottleTimer = timer;
+}
+
+function hideBubble(id) {
+  const b = document.getElementById(id);
+  if (b) b.classList.remove('show');
+}
+
+function triggerCrabMsg() {
+  clearTimeout(crabTimer);
+  hideBubble('crabBubble');
+  void document.getElementById('crabBubble').offsetWidth;
+  showBubble('crabBubble', 5000);
+}
+
+function triggerJellyMsg() {
+  clearTimeout(jellyTimer);
+  hideBubble('jellyBubble');
+  void document.getElementById('jellyBubble').offsetWidth;
+  showBubble('jellyBubble', 5000);
+}
+
+document.addEventListener('click', function(e) {
+  if (e.target.closest('.message-card') && !e.target.closest('.message-text')) {
+    const h = document.createElement('div');
+    h.className = 'heart';
+    h.textContent = ['💕','🐚','🌊','✨'][Math.floor(Math.random()*4)];
+    h.style.left = (e.clientX-15)+'px';
+    h.style.top = (e.clientY-15)+'px';
+    document.body.appendChild(h);
+    setTimeout(()=>h.remove(), 2000);
+  }
+});
+
+// ========= BOTTLE & MESSAGE SWAP =========
+const SECRET_MESSAGES = [
+  {
+    to: "You, yes you 🌊",
+    msg: "The ocean kept this one especially for you… 🐚\n\nSometimes the most beautiful things are found at the very bottom — and you just found your way back to the top. That takes courage. Keep floating. 💙",
+    from: "The Deep Sea 🌊"
+  },
+  {
+    to: "Brave explorer 🐠",
+    msg: "You dove all the way down and came back up. Not everyone does.\n\nThe sea wants you to know: every wave that pulls away always returns. So do the good things. 🌸✨",
+    from: "A Friendly Current 🌀"
+  },
+  {
+    to: "Wanderer of the deep 🪼",
+    msg: "This message floated for a thousand miles just to reach you.\n\nMay your days be as wide as the ocean and as warm as sunlight on the surface. You deserve every ray. ☀️🐚",
+    from: "The Tide 🌊"
+  }
+];
+
+let bottleOpened = false;
+let currentSecretIdx = 0;
+
+function openBottleLetter() {
+  document.getElementById('letterOverlay').classList.add('active');
+  bottleOpened = true;
+  currentSecretIdx = (currentSecretIdx + 1) % SECRET_MESSAGES.length;
+}
+function closeBottleLetter() {
+  document.getElementById('letterOverlay').classList.remove('active');
+}
+
+function scrollToTopAndReveal() {
+  closeBottleLetter();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // wait for scroll to finish then swap message
+  const waitForTop = setInterval(() => {
+    if (window.scrollY < 60) {
+      clearInterval(waitForTop);
+      if (bottleOpened) {
+        bottleOpened = false;
+        swapMessageCard();
+      }
+    }
+  }, 120);
+}
+
+function swapMessageCard() {
+  const card = document.getElementById('msg-display');
+  const toEl = document.getElementById('to-name');
+  const fromEl = document.getElementById('from-name');
+  const secret = SECRET_MESSAGES[currentSecretIdx % SECRET_MESSAGES.length];
+
+  // fade out the whole message card area
+  const messageCard = card.closest('.message-card');
+  messageCard.classList.add('msg-swap-out');
+
+  setTimeout(() => {
+    messageCard.classList.remove('msg-swap-out');
+    // update content
+    toEl.textContent = secret.to;
+    document.getElementById('msg-content').textContent = secret.msg;
+    fromEl.textContent = secret.from;
+    // fade in
+    messageCard.classList.add('msg-swap-in');
+    spawnHearts();
+    setTimeout(() => messageCard.classList.remove('msg-swap-in'), 800);
+  }, 500);
+}
+
+document.getElementById('editOverlay').addEventListener('click', function(e){
+  if (e.target===this) closeEdit();
+});
+document.getElementById('pwOverlay').addEventListener('click', function(e){
+  if (e.target===this) closePwOverlay();
+});
+document.getElementById('letterOverlay').addEventListener('click', function(e){
+  if (e.target===this) closeBottleLetter();
+});
+
+// ========= MUSIC =========
+const audio    = document.getElementById('ocean-audio');
+const musicBtn = document.getElementById('music-btn');
+audio.volume   = 0.4;
+
+function startMusic() {
+  audio.play().catch(() => {});
+}
+
+// Try autoplay immediately
+audio.play().catch(() => {
+  // Blocked — start on first interaction
+  ['click','scroll','keydown','touchstart'].forEach(ev =>
+    document.addEventListener(ev, startMusic, { once: true })
+  );
+});
+
+musicBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (audio.paused) {
+    audio.play();
+    musicBtn.textContent = '🔊';
+  } else {
+    audio.pause();
+    musicBtn.textContent = '🔇';
+  }
+});
+
+</script>
+</body>
+</html>
